@@ -304,12 +304,119 @@ Saat ini API belum menggunakan authentication. Untuk production, implementasikan
 
 #### 📦 Products
 
-##### GET /products
+##### GET /getAllProduct
 
 Mengambil semua produk
 
 ```bash
-curl -X GET http://localhost:5000/products
+curl -X GET http://localhost:5000/getAllProduct
+```
+
+**Response:**
+
+```json
+{
+  "error": false,
+  "message": "Data fetched successfully",
+  "data": [
+    {
+      "categoryId": 1,
+      "currentPrice": 46999,
+      "discount": 59.13,
+      "id": 1,
+      "imgUrl": "https://images.tokopedia.net/img/cache/500-square/aphluv/1997/1/1/d2258014fd4b4e8dacf82c30502bc26d~.jpeg.webp?ect=4g",
+      "name": "(BELI 2pcs DAPAT HADIAH) BITZEN Ikat Pinggang Pria Premium Dengan Bahan Aluminium Zinc Alloy dan Nylon Canvas Sabuk - Hitam, 120",
+      "originalPrice": 115000,
+      "stock": 376
+    }
+  ]
+}
+```
+
+**Error Response (500):**
+
+```json
+{
+  "error": true,
+  "message": "Error fetching data",
+  "data": null
+}
+```
+
+##### GET /getAllProductByCategory
+
+Filter produk berdasarkan kategori
+
+**Query Parameters:**
+
+- `category` (string, required): category id untuk filter product
+
+```bash
+curl -X GET "http://localhost:5000/getAllProductByCategory?category=1"
+```
+
+**Response:**
+
+```json
+{
+  "error": false,
+  "message": "Data fetched successfully",
+  "data": [
+    {
+      "categoryId": 1,
+      "currentPrice": 46999,
+      "discount": 59.13,
+      "id": 1,
+      "imgUrl": "https://images.tokopedia.net/img/cache/500-square/aphluv/1997/1/1/d2258014fd4b4e8dacf82c30502bc26d~.jpeg.webp?ect=4g",
+      "name": "(BELI 2pcs DAPAT HADIAH) BITZEN Ikat Pinggang Pria Premium Dengan Bahan Aluminium Zinc Alloy dan Nylon Canvas Sabuk - Hitam, 120",
+      "originalPrice": 115000,
+      "stock": 376
+    }
+  ]
+}
+```
+
+##### GET /getAllProductsByName
+
+Pencarian produk berdasarkan nama dengan keyword
+
+**Query Parameters:**
+
+- `name` (string, required): keyword untuk mencari product
+
+```bash
+curl -X GET "http://localhost:5000/getAllProductsByName?name=jam tangan"
+```
+
+**Response:**
+
+```json
+{
+  "error": false,
+  "message": "Data fetched successfully",
+  "data": [
+    {
+      "categoryId": 3,
+      "currentPrice": 8299000,
+      "discount": 20.95,
+      "id": 2,
+      "imgUrl": "https://images.tokopedia.net/img/cache/500-square/VqbcmM/2024/12/11/8eb8652e-eb2f-4464-8ce9-7d61054b907e.png.webp?ect=4g",
+      "name": "APPLE IPHONE 15 IBOX 512GB 256GB 128GB - IPHONE 14 - IPHONE 13 GARANSI RESMI INDONESIA NEW SEGEL GREEN PEEL - IPHONE 13 128GB",
+      "originalPrice": 10499000,
+      "stock": 44
+    }
+  ]
+}
+```
+
+#### 📂 Categories
+
+##### GET /getAllCategory
+
+Mengambil semua kategori produk
+
+```bash
+curl -X GET http://localhost:5000/getAllCategory
 ```
 
 **Response:**
@@ -321,83 +428,191 @@ curl -X GET http://localhost:5000/products
   "data": [
     {
       "id": 1,
-      "name": "Smart Watch SKMEI",
-      "currentPrice": 150000,
-      "originalPrice": 200000,
-      "imgUrl": "https://example.com/image.jpg",
-      "stock": 50,
-      "categoryId": 1,
-      "discount": 25
+      "name": "Aksesoris"
     }
   ]
 }
 ```
 
-##### GET /products/search?q={query}
+**Error Response (500):**
 
-Pencarian produk dengan AI
-
-```bash
-curl -X GET "http://localhost:5000/products/search?q=jam tangan"
-```
-
-##### GET /products/category/{categoryId}
-
-Filter produk berdasarkan kategori
-
-```bash
-curl -X GET http://localhost:5000/products/category/1
-```
-
-#### 📂 Categories
-
-##### GET /categories
-
-Mengambil semua kategori
-
-```bash
-curl -X GET http://localhost:5000/categories
+```json
+{
+  "error": true,
+  "message": "Error fetching data",
+  "data": null
+}
 ```
 
 #### ⭐ Reviews
 
-##### GET /reviews
+##### GET /getAllReview
 
-Mengambil semua review
-
-```bash
-curl -X GET http://localhost:5000/reviews
-```
-
-##### GET /reviews/product/{productId}
-
-Review untuk produk tertentu
+Mengambil semua data review
 
 ```bash
-curl -X GET http://localhost:5000/reviews/product/1
-```
-
-#### 🤖 AI Sentiment Analysis
-
-##### POST /analyze-sentiment
-
-Analisis sentiment untuk text
-
-```bash
-curl -X POST http://localhost:5000/analyze-sentiment \
-  -H "Content-Type: application/json" \
-  -d '{"text": "Produk bagus banget, sangat puas!"}'
+curl -X GET http://localhost:5000/getAllReview
 ```
 
 **Response:**
 
 ```json
 {
-  "sentiment": "positive",
-  "confidence": 0.95,
-  "score": 4.7
+  "error": false,
+  "message": "Data fetched successfully",
+  "data": [
+    {
+      "id": 1,
+      "productId": 13,
+      "rating": 5,
+      "review": "gelang kirim seller ramah tanggung dana terimakasih seller",
+      "tanggal": "Tue, 01 Apr 2025 10:55:59 GMT"
+    }
+  ]
 }
 ```
+
+##### GET /getAllReviewByProduct
+
+Review untuk produk tertentu
+
+**Query Parameters:**
+
+- `product` (string, required): product id untuk filter review
+
+```bash
+curl -X GET "http://localhost:5000/getAllReviewByProduct?product=1"
+```
+
+**Response:**
+
+```json
+{
+  "error": false,
+  "message": "Data fetched successfully",
+  "data": [
+    {
+      "id": 5368,
+      "productId": 1,
+      "rating": 5,
+      "review": "jam fungsi kelihatannewah sesuai harap",
+      "tanggal": "Sun, 01 Dec 2024 10:55:59 GMT"
+    }
+  ]
+}
+```
+
+##### GET /getAllReviewByCategory
+
+Review berdasarkan kategori tertentu
+
+**Query Parameters:**
+
+- `category` (string, required): category id untuk filter review
+
+```bash
+curl -X GET "http://localhost:5000/getAllReviewByCategory?category=1"
+```
+
+**Response:**
+
+```json
+{
+  "error": false,
+  "message": "Data fetched successfully",
+  "data": [
+    {
+      "id": 1070,
+      "productId": 6,
+      "rating": 4,
+      "review": "bagus rekomedasi hadiah sukses trimakasih paket darat tuju aman",
+      "tanggal": "Sat, 01 Mar 2025 10:55:59 GMT"
+    }
+  ]
+}
+```
+
+#### 🤖 AI Sentiment Analysis
+
+##### GET /getSentimentByProduct
+
+Analisis sentiment untuk produk tertentu
+
+**Query Parameters:**
+
+- `product` (string, required): product id untuk filter sentiment
+
+```bash
+curl -X GET "http://localhost:5000/getSentimentByProduct?product=7"
+```
+
+**Response:**
+
+```json
+{
+  "error": false,
+  "message": "Prediction succeeded",
+  "data": [
+    {
+      "productId": 7,
+      "sentiment_negative": 0,
+      "sentiment_neutral": 987,
+      "sentiment_positive": 1
+    }
+  ]
+}
+```
+
+**Error Response (500):**
+
+```json
+{
+  "error": true,
+  "message": "Prediction failed",
+  "data": null
+}
+```
+
+### Error Handling
+
+Semua endpoint mengikuti format response yang konsisten:
+
+**Success Response Format:**
+
+```json
+{
+  "error": false,
+  "message": "Operation successful message",
+  "data": [
+    /* actual data */
+  ]
+}
+```
+
+**Error Response Format:**
+
+```json
+{
+  "error": true,
+  "message": "Error description message",
+  "data": null
+}
+```
+
+### Common HTTP Status Codes
+
+- `200 OK`: Request berhasil
+- `400 Bad Request`: Parameter tidak valid atau missing
+- `404 Not Found`: Resource tidak ditemukan
+- `500 Internal Server Error`: Error pada server
+
+### Rate Limiting
+
+Saat ini belum ada rate limiting. Untuk production, implementasikan rate limiting untuk mencegah abuse.
+
+### CORS Configuration
+
+API sudah dikonfigurasi dengan CORS untuk development. Untuk production, pastikan CORS dikonfigurasi sesuai dengan domain frontend.
 
 ## 🤖 AI Model
 
@@ -633,5 +848,542 @@ fullstack/
 │           ├── utils.ts       # Helper functions
 │           ├── debug.ts       # Debug utilities
 │           └── performance.ts # Performance monitoring
-│
 ```
+
+### 🔍 Detail Komponen Frontend
+
+#### Core Pages
+
+- **`src/app/page.tsx`**: Homepage utama dengan hero section, search, dan product grid
+- **`src/app/layout.tsx`**: Root layout dengan metadata dan global providers
+
+#### UI Components
+
+- **`SearchInput.tsx`**: AI-powered search component dengan auto-suggestions
+- **`CategoryFilter.tsx`**: Dropdown filter untuk kategori produk
+- **`StatsCards.tsx`**: Dashboard cards untuk statistik platform
+- **`FeatureCards.tsx`**: Cards menampilkan fitur-fitur YAPin
+
+#### Product Components
+
+- **`ProductCard.tsx`**: Card komponen untuk menampilkan produk individual
+- **`ProductGrid.tsx`**: Grid layout untuk list produk dengan responsive design
+- **`ProductModal.tsx`**: Modal detail produk dengan review dan sentiment analysis
+
+#### Custom Hooks
+
+- **`useProducts.ts`**: Hook untuk manajemen state produk dan search
+- **`useCategories.ts`**: Hook untuk data kategori
+- **`useReviews.ts`**: Hook untuk review dan sentiment data
+
+#### Utilities
+
+- **`api.ts`**: HTTP client untuk komunikasi dengan backend API
+- **`types.ts`**: TypeScript interfaces untuk type safety
+- **`utils.ts`**: Helper functions (className merger, date formatter, etc.)
+
+### 🔧 Detail Komponen Backend
+
+#### Core Application
+
+- **`main.py`**: Flask app dengan route definitions dan CORS setup
+- **`requirements.txt`**: Dependencies including Flask, mysql-connector, tensorflow
+
+#### AI/ML Module
+
+- **`sentiment_model.keras`**: Pre-trained model untuk sentiment analysis
+- **`predict.py`**: Functions untuk prediction dan batch processing
+- **`custom_layers.py`**: Custom layers untuk neural network
+- **`util.py`**: Text preprocessing dan tokenization
+
+#### Controllers
+
+- **`fetch.py`**: Business logic untuk data fetching dan processing
+
+#### Database
+
+- **`db.sql`**: Complete database schema dengan sample data (10,000+ entries)
+- **`setup.py`**: Database initialization dan migration scripts
+- **`util.py`**: Database connection dan query utilities
+
+## 🐛 Troubleshooting
+
+### Common Issues & Solutions
+
+#### 🔴 Frontend Issues
+
+##### 1. Module not found errors
+
+```bash
+# Clear cache dan reinstall
+rm -rf node_modules .next
+npm install
+```
+
+##### 2. TypeScript errors
+
+```bash
+# Check dan fix TypeScript issues
+npm run build
+```
+
+##### 3. Tailwind CSS tidak load
+
+- Pastikan `tailwind.config.ts` configure dengan benar
+- Check import di `globals.css`
+- Restart development server
+
+##### 4. API connection failed
+
+- Pastikan backend running di port 5000
+- Check CORS configuration
+- Verify `.env.local` configuration
+
+#### 🔴 Backend Issues
+
+##### 1. Database connection failed
+
+```python
+# Test database connection
+python test_db.py
+```
+
+**Solusi:**
+
+- Pastikan MySQL running via XAMPP
+- Check credentials di `.env`
+- Verify database `yapin_db` exists
+
+##### 2. AI model loading error
+
+```bash
+# Check model file
+ls -la ai_model/sentiment_model.keras
+```
+
+**Solusi:**
+
+- Pastikan model file exists dan readable
+- Check Python dependencies untuk TensorFlow
+- Verify model path di environment variables
+
+##### 3. Flask import errors
+
+```bash
+# Reinstall dependencies
+pip install -r requirements.txt
+```
+
+##### 4. Port already in use
+
+```bash
+# Find process using port 5000
+lsof -i :5000
+# Kill process
+kill -9 <PID>
+```
+
+#### 🔴 Database Issues
+
+##### 1. Import db.sql failed
+
+- Check MySQL server running
+- Verify database permissions
+- Try importing via command line:
+
+```bash
+mysql -u root -p yapin_db < db.sql
+```
+
+##### 2. Connection timeout
+
+- Increase MySQL timeout settings
+- Check firewall settings
+- Verify MySQL configuration
+
+#### 🔴 Performance Issues
+
+##### 1. Slow API responses
+
+- Check database query optimization
+- Implement caching untuk frequently accessed data
+- Monitor AI model prediction time
+
+##### 2. Frontend loading slow
+
+- Enable Next.js image optimization
+- Implement lazy loading untuk components
+- Check network requests di DevTools
+
+### 🔧 Debug Mode
+
+#### Frontend Debug
+
+```bash
+# Enable debug mode
+NEXT_PUBLIC_DEBUG=true npm run dev
+```
+
+#### Backend Debug
+
+```python
+# Enable Flask debug
+export FLASK_DEBUG=1
+python main.py
+```
+
+### 📊 Performance Monitoring
+
+#### Frontend Performance
+
+- Built-in Next.js analytics
+- Custom performance hooks
+- Real User Monitoring (RUM)
+
+#### Backend Performance
+
+- Flask request timing
+- Database query monitoring
+- AI model prediction metrics
+
+### 🆘 Getting Help
+
+Jika masih mengalami issues:
+
+1. **Check Logs**: Periksa console logs untuk error details
+2. **Search Issues**: Cari di GitHub issues atau StackOverflow
+3. **Contact Team**: Hubungi tim pengembang (lihat section Tim Pengembang)
+
+## 💡 Tips & Best Practices
+
+### 🚀 Development Tips
+
+#### Frontend
+
+1. **Component Organization**: Gunakan atomic design pattern
+2. **State Management**: Prefer React hooks over external state libraries
+3. **Performance**: Implement lazy loading dan code splitting
+4. **Accessibility**: Pastikan proper ARIA labels dan keyboard navigation
+
+#### Backend
+
+1. **API Design**: Follow RESTful conventions
+2. **Error Handling**: Implement comprehensive error responses
+3. **Security**: Validate input data dan implement rate limiting
+4. **Caching**: Cache frequently accessed data
+
+#### Database
+
+1. **Indexing**: Add proper indexes untuk query performance
+2. **Normalization**: Maintain proper database normalization
+3. **Backup**: Regular database backups
+4. **Monitoring**: Monitor query performance
+
+### 🔒 Security Considerations
+
+#### Frontend
+
+- Sanitize user inputs
+- Implement CSP headers
+- Use HTTPS dalam production
+- Validate data before API calls
+
+#### Backend
+
+- Input validation
+- SQL injection prevention
+- Rate limiting
+- Authentication/Authorization untuk production
+
+#### Database
+
+- Use prepared statements
+- Regular security updates
+- Access control
+- Encrypted connections
+
+### 🎯 Production Deployment
+
+#### Frontend (Vercel/Netlify)
+
+```bash
+# Build untuk production
+npm run build
+
+# Test production build
+npm run start
+```
+
+#### Backend (Docker/Cloud)
+
+```dockerfile
+FROM python:3.12.7-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY . .
+EXPOSE 5000
+CMD ["python", "main.py"]
+```
+
+#### Database (Cloud SQL/RDS)
+
+- Migrate ke cloud database service
+- Setup automated backups
+- Configure monitoring
+- Implement connection pooling
+
+## 👥 Tim Pengembang
+
+### 🏆 Tim Laskar AI
+
+Proyek YAPin dikembangkan oleh tim yang passionate tentang AI dan web development:
+
+#### 👨‍💻 **Ajus Dwimantara**
+
+- **Role**: Full Stack Developer & AI Engineer
+- **GitHub**: [@ajusdwimantara](https://github.com/ajusdwimantara)
+- **Expertise**: React, Node.js, Machine Learning
+- **Contribution**: Frontend architecture, AI model integration
+
+#### 👩‍💻 **Febhe Maulita May Pramasta**
+
+- **Role**: Frontend Developer & UI/UX Designer
+- **GitHub**: [@fluffybhe](https://github.com/fluffybhe)
+- **Expertise**: React, TypeScript, Design Systems
+- **Contribution**: Component design, user experience
+
+#### 👨‍💻 **Shingen (Jeremias Barani)**
+
+- **Role**: Backend Developer & DevOps
+- **GitHub**: [@jeremiasbarani](https://github.com/jeremiasbarani)
+- **Expertise**: Python, Flask, Database Design
+- **Contribution**: API development, database architecture
+
+#### 👨‍💻 **Rama Anindya**
+
+- **Role**: AI/ML Engineer & Data Scientist
+- **GitHub**: [@ramaanindyaa](https://github.com/ramaanindyaa)
+- **Expertise**: Machine Learning, Data Analysis, Python
+- **Contribution**: Sentiment analysis model, data processing
+
+### 🤝 Collaboration
+
+Tim bekerja menggunakan:
+
+- **Methodology**: Agile Scrum
+- **Tools**: Git, GitHub, VS Code, Figma
+- **Communication**: Discord, Zoom
+- **Documentation**: Markdown, JSDoc, Python docstrings
+
+## 📝 Contributing
+
+Kami menyambut kontribusi dari komunitas! Berikut cara untuk berkontribusi:
+
+### 🔄 Process Flow
+
+1. **Fork** repository ini
+2. **Clone** fork ke local machine
+
+```bash
+git clone https://github.com/YOUR_USERNAME/yapin.git
+```
+
+3. **Create** feature branch
+
+```bash
+git checkout -b feature/amazing-feature
+```
+
+4. **Make** changes dan commit
+
+```bash
+git add .
+git commit -m "Add amazing feature"
+```
+
+5. **Push** ke branch
+
+```bash
+git push origin feature/amazing-feature
+```
+
+6. **Create** Pull Request
+
+### 📋 Contribution Guidelines
+
+#### Code Style
+
+- **Frontend**: ESLint + Prettier configuration
+- **Backend**: PEP 8 untuk Python
+- **Commit Messages**: Conventional commits format
+
+#### Testing
+
+- Write unit tests untuk new features
+- Ensure all tests pass sebelum PR
+- Include integration tests jika applicable
+
+#### Documentation
+
+- Update README untuk new features
+- Add JSDoc comments untuk functions
+- Include API documentation updates
+
+### 🐛 Bug Reports
+
+Untuk melaporkan bug:
+
+1. **Search** existing issues terlebih dahulu
+2. **Create** detailed bug report dengan:
+   - Steps to reproduce
+   - Expected behavior
+   - Actual behavior
+   - Screenshots/logs jika applicable
+   - Environment details
+
+### 💡 Feature Requests
+
+Untuk request fitur baru:
+
+1. **Describe** use case dan problem yang dipecahkan
+2. **Provide** detailed requirements
+3. **Consider** implementation complexity
+4. **Discuss** dengan tim sebelum development
+
+## 📄 License
+
+Proyek ini menggunakan **MIT License**. Lihat file [LICENSE](LICENSE) untuk detail lengkap.
+
+```
+MIT License
+
+Copyright (c) 2024 Tim Laskar AI
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+```
+
+## 🙏 Acknowledgments
+
+### 🎯 Inspirations
+
+- **Google Trends** - untuk UI/UX inspiration
+- **Tokopedia** - untuk product data structure
+- **OpenAI** - untuk AI integration patterns
+
+### 📚 Resources
+
+- **Data Source**: Sample data dari marketplace patterns
+- **Icons**: [Lucide React](https://lucide.dev/)
+- **Fonts**: Inter dari Google Fonts
+- **Colors**: Custom palette inspired by modern design
+
+### 🛠️ Technologies
+
+- **Next.js Team** - untuk amazing React framework
+- **Tailwind CSS** - untuk utility-first CSS framework
+- **TensorFlow** - untuk AI/ML capabilities
+- **MySQL** - untuk reliable database solution
+
+## 📈 Roadmap
+
+### 🎯 Q1 2025
+
+- [ ] **Advanced AI Features**
+
+  - Multi-language sentiment analysis
+  - Product recommendation engine
+  - Price prediction algorithm
+
+- [ ] **User Features**
+  - User authentication & profiles
+  - Wishlist & favorites
+  - Personalized recommendations
+
+### 🎯 Q2 2025
+
+- [ ] **Analytics Dashboard**
+
+  - Real-time analytics
+  - Business intelligence features
+  - Custom reporting
+
+- [ ] **Mobile App**
+  - React Native mobile app
+  - Push notifications
+  - Offline functionality
+
+### 🎯 Q3 2025
+
+- [ ] **Enterprise Features**
+  - Multi-tenant architecture
+  - API rate limiting
+  - Advanced security features
+
+### 🎯 Future Ideas
+
+- [ ] **AR/VR Integration**
+- [ ] **Voice Search**
+- [ ] **Blockchain Integration**
+- [ ] **IoT Device Support**
+
+---
+
+## 🚀 Quick Start Commands
+
+### Development Mode
+
+```bash
+# Backend
+cd back-end-main
+python main.py
+
+# Frontend (new terminal)
+cd front-end-main
+npm run dev
+```
+
+### Production Build
+
+```bash
+# Frontend
+npm run build
+npm run start
+
+# Backend
+python main.py
+```
+
+### Database Operations
+
+```bash
+# Import database
+mysql -u root -p yapin_db < db.sql
+
+# Test connection
+python test_db.py
+```
+
+---
+
+**⭐ Jika project ini bermanfaat, berikan star di repository! ⭐**
+
+**💬 Punya pertanyaan? Buka issue atau hubungi tim pengembang.**
+
+**🔗 Links:**
+
+- [Live Demo](http://localhost:3000) (when running locally)
+- [API Documentation](http://localhost:5000) (when running locally)
+- [GitHub Repository](https://github.com/laskar-ai-capstone-trend-analysist)
+
+---
+
+_Made with ❤️ and 🤖 AI by Tim Laskar AI - Indonesia_

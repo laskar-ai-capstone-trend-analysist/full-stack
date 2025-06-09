@@ -21,9 +21,10 @@ Platform AI-powered untuk product discovery yang cerdas dan personal. YAPin meng
 - [🔧 Konfigurasi](#-konfigurasi)
 - [📁 Struktur Project](#-struktur-project)
 - [🐛 Troubleshooting](#-troubleshooting)
+- [💡 Tips & Best Practices](#-tips--best-practices)
 - [👥 Tim Pengembang](#-tim-pengembang)
 - [📝 Contributing](#-contributing)
-- [📄 License](#-license)
+- [🙏 Acknowledgments](#-acknowledgments)
 
 ## ✨ Fitur Utama
 
@@ -1141,17 +1142,17 @@ Proyek YAPin dikembangkan oleh tim yang passionate tentang AI dan web developmen
 
 #### 👨‍💻 **Ajus Dwimantara**
 
-- **Role**: Full Stack Developer & AI Engineer
+- **Role**: AI/ML Engineer & Data Scientist
 - **GitHub**: [@ajusdwimantara](https://github.com/ajusdwimantara)
-- **Expertise**: React, Node.js, Machine Learning
-- **Contribution**: Frontend architecture, AI model integration
+- **Expertise**: Machine Learning, Data Analysis, React
+- **Contribution**: AI model development, data processing, frontend integration
 
 #### 👩‍💻 **Febhe Maulita May Pramasta**
 
-- **Role**: Frontend Developer & UI/UX Designer
+- **Role**: AI/ML Engineer & Data Scientist
 - **GitHub**: [@fluffybhe](https://github.com/fluffybhe)
-- **Expertise**: React, TypeScript, Design Systems
-- **Contribution**: Component design, user experience
+- **Expertise**: Machine Learning, Data Science, UI/UX Design
+- **Contribution**: Sentiment analysis model, data visualization, user experience
 
 #### 👨‍💻 **Shingen (Jeremias Barani)**
 
@@ -1162,10 +1163,10 @@ Proyek YAPin dikembangkan oleh tim yang passionate tentang AI dan web developmen
 
 #### 👨‍💻 **Rama Anindya**
 
-- **Role**: AI/ML Engineer & Data Scientist
+- **Role**: Full Stack Developer & AI Engineer
 - **GitHub**: [@ramaanindyaa](https://github.com/ramaanindyaa)
-- **Expertise**: Machine Learning, Data Analysis, Python
-- **Contribution**: Sentiment analysis model, data processing
+- **Expertise**: React, Node.js, Python, Machine Learning
+- **Contribution**: Full stack architecture, AI model integration, system design
 
 ### 🤝 Collaboration
 
@@ -1178,7 +1179,7 @@ Tim bekerja menggunakan:
 
 ## 📝 Contributing
 
-Kami menyambut kontribusi dari komunitas! Berikut cara untuk berkontribusi:
+Kami menyambut kontribusi dari komunitas! berikut cara untuk berkontribusi:
 
 ### 🔄 Process Flow
 
@@ -1251,26 +1252,6 @@ Untuk request fitur baru:
 3. **Consider** implementation complexity
 4. **Discuss** dengan tim sebelum development
 
-## 📄 License
-
-Proyek ini menggunakan **MIT License**. Lihat file [LICENSE](LICENSE) untuk detail lengkap.
-
-```
-MIT License
-
-Copyright (c) 2024 Tim Laskar AI
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-```
-
 ## 🙏 Acknowledgments
 
 ### 🎯 Inspirations
@@ -1292,48 +1273,6 @@ copies or substantial portions of the Software.
 - **Tailwind CSS** - untuk utility-first CSS framework
 - **TensorFlow** - untuk AI/ML capabilities
 - **MySQL** - untuk reliable database solution
-
-## 📈 Roadmap
-
-### 🎯 Q1 2025
-
-- [ ] **Advanced AI Features**
-
-  - Multi-language sentiment analysis
-  - Product recommendation engine
-  - Price prediction algorithm
-
-- [ ] **User Features**
-  - User authentication & profiles
-  - Wishlist & favorites
-  - Personalized recommendations
-
-### 🎯 Q2 2025
-
-- [ ] **Analytics Dashboard**
-
-  - Real-time analytics
-  - Business intelligence features
-  - Custom reporting
-
-- [ ] **Mobile App**
-  - React Native mobile app
-  - Push notifications
-  - Offline functionality
-
-### 🎯 Q3 2025
-
-- [ ] **Enterprise Features**
-  - Multi-tenant architecture
-  - API rate limiting
-  - Advanced security features
-
-### 🎯 Future Ideas
-
-- [ ] **AR/VR Integration**
-- [ ] **Voice Search**
-- [ ] **Blockchain Integration**
-- [ ] **IoT Device Support**
 
 ---
 

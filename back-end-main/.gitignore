@@ -1,0 +1,9 @@
+# .env file
+.env
+
+# pip environment file
+Pipfile
+Pipfile.lock
+
+# pycache
+__pycache__/

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useProducts } from '@/hooks/useProducts';
 import { useCategories } from '@/hooks/useCategories';
-import { Product } from '@/types';
+import { Product } from '@/hooks/useProducts';
 import ProductGrid from '@/components/product/ProductGrid';
 import SearchInput from '@/components/ui/SearchInput';
 import CategoryFilter from '@/components/ui/CategoryFilter';

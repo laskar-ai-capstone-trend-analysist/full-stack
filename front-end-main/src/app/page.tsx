@@ -551,16 +551,75 @@ export default function Home() {
                   <p className='text-sm text-gray-400'>Yuk AI Pickin</p>
                 </div>
               </div>
+
               <p className='text-gray-300 mb-6'>
                 Platform AI-powered untuk product discovery yang cerdas dan
                 personal
               </p>
+
+              {/* Team Section */}
+              <div className='mb-8'>
+                <h4 className='text-lg font-semibold text-gray-300 mb-4'>
+                  Tim Laskar AI
+                </h4>
+                <div className='flex flex-wrap justify-center gap-4'>
+                  <a
+                    href='https://github.com/ajusdwimantara'
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className='flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-lg transition-colors'
+                  >
+                    <Github className='w-4 h-4' />
+                    <span className='text-sm'>ajusdwimantara</span>
+                  </a>
+
+                  <a
+                    href='https://github.com/fluffybhe'
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className='flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-lg transition-colors'
+                  >
+                    <Github className='w-4 h-4' />
+                    <span className='text-sm'>fluffybhe</span>
+                  </a>
+
+                  <a
+                    href='https://github.com/jeremiasibarani'
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className='flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-lg transition-colors'
+                  >
+                    <Github className='w-4 h-4' />
+                    <span className='text-sm'>jeremiasibarani</span>
+                  </a>
+
+                  <a
+                    href='https://github.com/ramaanindyaa'
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className='flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-lg transition-colors'
+                  >
+                    <Github className='w-4 h-4' />
+                    <span className='text-sm'>ramaanindyaa</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* Social Links */}
               <div className='flex justify-center space-x-6 mb-8'>
-                <Github className='w-6 h-6 text-gray-400 hover:text-white cursor-pointer transition-colors' />
+                <a
+                  href='https://github.com/laskar-ai-capstone-trend-analysist'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='text-gray-400 hover:text-white transition-colors'
+                >
+                  <Github className='w-6 h-6' />
+                </a>
                 <Twitter className='w-6 h-6 text-gray-400 hover:text-white cursor-pointer transition-colors' />
                 <Linkedin className='w-6 h-6 text-gray-400 hover:text-white cursor-pointer transition-colors' />
                 <Instagram className='w-6 h-6 text-gray-400 hover:text-white cursor-pointer transition-colors' />
               </div>
+
               <div className='pt-8 border-t border-gray-700'>
                 <p className='text-gray-400 text-sm'>
                   © 2025 YAPin - Yuk AI Pickin. Made with{' '}

@@ -1,17 +1,94 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, {
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+  Suspense,
+  lazy,
+} from 'react';
 import { useProducts } from '@/hooks/useProducts';
 import { useCategories } from '@/hooks/useCategories';
 import { Product } from '@/lib/types';
 import ProductGrid from '@/components/product/ProductGrid';
 import SearchInput from '@/components/ui/SearchInput';
 import CategoryFilter from '@/components/ui/CategoryFilter';
-import ProductModal from '@/components/product/ProductModal';
 import StatsCards from '@/components/ui/StatsCards';
 import FeatureCards from '@/components/ui/FeatureCards';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import {
+  AlertCircle,
+  RefreshCw,
+  TrendingUp,
+  Sparkles,
+  Star,
+  Filter,
+  Search,
+  Mail,
+  Phone,
+  MapPin,
+  Github,
+  Twitter,
+  Linkedin,
+  Instagram,
+  Heart,
+  ExternalLink,
+  ChevronUp,
+  Zap,
+  Users,
+  Award,
+  Clock,
+  WifiOff,
+  AlertTriangle,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+// Lazy load heavy components for better performance
+const ProductModal = lazy(() => import('@/components/product/ProductModal'));
+
+// Custom error boundary component
+class ErrorBoundary extends React.Component {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error('Error caught by boundary:', error, errorInfo);
+  }
+
+  render() {
+    const state = this.state as any;
+    if (state.hasError) {
+      return (
+        <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center px-4'>
+          <div className='text-center p-8 bg-white rounded-2xl shadow-xl max-w-md mx-auto'>
+            <AlertTriangle className='w-16 h-16 text-red-500 mx-auto mb-4' />
+            <h2 className='text-2xl font-bold text-gray-900 mb-2'>
+              Oops! Terjadi Kesalahan
+            </h2>
+            <p className='text-gray-600 mb-6'>
+              Maaf, aplikasi mengalami masalah teknis. Tim kami sudah diberitahu
+              dan sedang memperbaikinya.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className='px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors'
+            >
+              Muat Ulang Halaman
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (this.props as any).children;
+  }
+}
 
 export default function Home() {
   const {
@@ -21,7 +98,7 @@ export default function Home() {
     refetch: refetchProducts,
     searchProducts,
     filterByCategory,
-    getTrendingProducts, // ✅ Tambahkan ini
+    getTrendingProducts,
   } = useProducts();
 
   const {
@@ -30,216 +107,465 @@ export default function Home() {
     error: categoriesError,
   } = useCategories();
 
+  // State management with better organization
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState(''); // ✅ Track search query
-  const [selectedCategory, setSelectedCategory] = useState<number | null>(null); // ✅ Track selected category
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [isStatsVisible, setIsStatsVisible] = useState(false);
+  const [screenSize, setScreenSize] = useState<'mobile' | 'tablet' | 'desktop'>(
+    'desktop'
+  );
+  const [retryCount, setRetryCount] = useState(0);
+  const [isOnline, setIsOnline] = useState(true);
 
   const loading = productsLoading || categoriesLoading;
   const error = productsError || categoriesError;
 
-  // ✅ Safe arrays dengan null checking
-  const safeProducts = Array.isArray(products) ? products : [];
-  const safeCategories = Array.isArray(categories) ? categories : [];
+  // Memoized safe arrays
+  const safeProducts = useMemo(
+    () => (Array.isArray(products) ? products : []),
+    [products]
+  );
 
-  // ✅ Menentukan produk yang akan ditampilkan
+  const safeCategories = useMemo(
+    () => (Array.isArray(categories) ? categories : []),
+    [categories]
+  );
+
+  // Memoized display products with performance optimization
   const displayProducts = useMemo(() => {
-    // Jika ada pencarian atau filter, tampilkan semua hasil
     if (searchQuery || selectedCategory !== null) {
       return safeProducts;
     }
-
-    // Jika tidak ada pencarian/filter, tampilkan 8 trending teratas
     return getTrendingProducts(8);
   }, [safeProducts, searchQuery, selectedCategory, getTrendingProducts]);
 
-  // Handlers
-  const handleSearch = async (query: string) => {
-    try {
-      setSearchQuery(query); // ✅ Update search query state
-      await searchProducts(query);
-    } catch (error) {
-      console.error('Search error:', error);
-    }
-  };
-
-  const handleCategoryFilter = async (categoryId: number | null) => {
-    try {
-      setSelectedCategory(categoryId); // ✅ Update category state
-      if (categoryId === null) {
-        setSearchQuery(''); // ✅ Reset search when showing all
-        await refetchProducts();
-      } else {
-        await filterByCategory(categoryId);
+  // Optimized handlers with useCallback
+  const handleSearch = useCallback(
+    async (query: string) => {
+      try {
+        setSearchQuery(query);
+        if (query.trim()) {
+          await searchProducts(query);
+        } else {
+          await refetchProducts();
+        }
+        setRetryCount(0);
+      } catch (error) {
+        console.error('Search error:', error);
       }
-    } catch (error) {
-      console.error('Filter error:', error);
-    }
-  };
+    },
+    [searchProducts, refetchProducts]
+  );
 
-  const handleViewDetails = (product: Product) => {
+  const handleCategoryFilter = useCallback(
+    async (categoryId: number | null) => {
+      try {
+        setSelectedCategory(categoryId);
+        if (categoryId === null) {
+          setSearchQuery('');
+          await refetchProducts();
+        } else {
+          await filterByCategory(categoryId);
+        }
+        setRetryCount(0);
+      } catch (error) {
+        console.error('Filter error:', error);
+      }
+    },
+    [filterByCategory, refetchProducts]
+  );
+
+  const handleViewDetails = useCallback((product: Product) => {
     setSelectedProduct(product);
     setIsModalOpen(true);
-  };
+  }, []);
 
-  const handleCloseModal = () => {
+  const handleCloseModal = useCallback(() => {
     setIsModalOpen(false);
     setSelectedProduct(null);
-  };
+  }, []);
 
-  const handleRetry = () => {
-    refetchProducts();
-  };
+  const handleRetry = useCallback(async () => {
+    if (retryCount < 3) {
+      setRetryCount((prev) => prev + 1);
+      try {
+        await refetchProducts();
+      } catch (error) {
+        console.error('Retry failed:', error);
+      }
+    }
+  }, [refetchProducts, retryCount]);
 
-  // Error State dengan informasi lebih detail
-  if (error) {
+  const handleScrollToTop = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  // Monitor online status
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Optimized scroll handler with throttling
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
+    const handleScroll = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        setShowScrollTop(window.scrollY > 500);
+      }, 100);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      clearTimeout(timeoutId);
+    };
+  }, []);
+
+  // Optimized resize handler
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
+    const handleResize = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        const width = window.innerWidth;
+        if (width < 768) setScreenSize('mobile');
+        else if (width < 1024) setScreenSize('tablet');
+        else setScreenSize('desktop');
+      }, 150);
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(timeoutId);
+    };
+  }, []);
+
+  // Enhanced error state with offline detection
+  if (error && !loading) {
     return (
-      <div className='min-h-screen bg-gradient-to-br from-red-50 to-gray-50 flex items-center justify-center'>
-        <div className='max-w-md mx-auto text-center p-8'>
-          <AlertCircle className='w-16 h-16 mx-auto mb-6 text-red-500' />
-          <h1 className='text-2xl font-bold text-gray-900 mb-4'>
-            Tidak Dapat Memuat Data
-          </h1>
-          <p className='text-gray-600 mb-4'>{error}</p>
-          <div className='text-sm text-gray-500 mb-6 bg-gray-100 p-3 rounded'>
-            <strong>Troubleshooting:</strong>
-            <br />
-            • Pastikan backend berjalan di port 5000
-            <br />
-            • Cek file .env.local
-            <br />• Periksa console untuk error detail
+      <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center px-4'>
+        <div className='text-center p-8 bg-white rounded-2xl shadow-xl max-w-md mx-auto'>
+          {!isOnline ? (
+            <>
+              <WifiOff className='w-16 h-16 text-gray-500 mx-auto mb-4' />
+              <h2 className='text-2xl font-bold text-gray-900 mb-2'>
+                Tidak Ada Koneksi Internet
+              </h2>
+              <p className='text-gray-600 mb-6'>
+                Periksa koneksi internet Anda dan coba lagi.
+              </p>
+            </>
+          ) : (
+            <>
+              <AlertCircle className='w-16 h-16 text-red-500 mx-auto mb-4' />
+              <h2 className='text-2xl font-bold text-gray-900 mb-2'>
+                Gagal Memuat Data
+              </h2>
+              <p className='text-gray-600 mb-6'>
+                {retryCount > 0
+                  ? `Percobaan ke-${retryCount + 1} dari 3...`
+                  : 'Terjadi kesalahan saat memuat data produk.'}
+              </p>
+            </>
+          )}
+
+          <div className='flex flex-col sm:flex-row gap-3 justify-center'>
+            <button
+              onClick={handleRetry}
+              disabled={retryCount >= 3 || loading}
+              className={cn(
+                'flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200',
+                retryCount >= 3 || loading
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg'
+              )}
+            >
+              {loading ? (
+                <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />
+              ) : (
+                <RefreshCw className='w-4 h-4' />
+              )}
+              {retryCount >= 3 ? 'Batas Percobaan Tercapai' : 'Coba Lagi'}
+            </button>
+
+            <button
+              onClick={() => window.location.reload()}
+              className='px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors'
+            >
+              Muat Ulang Halaman
+            </button>
           </div>
-          <button
-            onClick={handleRetry}
-            className={cn(
-              'px-6 py-3 bg-blue-600 text-white rounded-lg font-medium',
-              'hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500',
-              'disabled:opacity-50 disabled:cursor-not-allowed',
-              'transition-all duration-200'
-            )}
-            disabled={loading}
-          >
-            <RefreshCw
-              className={cn('w-4 h-4 mr-2 inline', loading && 'animate-spin')}
-            />
-            Coba Lagi
-          </button>
+
+          {retryCount >= 3 && (
+            <p className='text-sm text-gray-500 mt-4'>
+              Jika masalah berlanjut, silakan hubungi tim support kami.
+            </p>
+          )}
         </div>
       </div>
     );
   }
 
-  return (
-    <div className='min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50'>
-      {/* Hero Section */}
-      <section className='relative py-20 px-4'>
-        <div className='max-w-6xl mx-auto text-center'>
-          <h1 className='text-5xl font-bold text-gray-900 mb-6 leading-tight'>
-            Tokopedia Trends
-            <span className='text-blue-600 block mt-2'>Analytics</span>
-          </h1>
-          <p className='text-lg text-gray-600 max-w-2xl mx-auto'>
-            Temukan produk-produk pilihan yang sedang trending di marketplace
-            dengan performa terbaik dan rating tertinggi
-          </p>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className='py-12 px-4'>
-        <div className='max-w-6xl mx-auto'>
-          <StatsCards
-            totalProducts={safeProducts.length}
-            totalCategories={safeCategories.length}
-          />
-        </div>
-      </section>
-
-      {/* Search and Filter Section */}
-      <section className='py-8 px-4'>
-        <div className='max-w-6xl mx-auto'>
-          <div className='flex flex-col lg:flex-row gap-4 mb-8'>
-            <div className='flex-1'>
-              <SearchInput
-                onSearch={handleSearch}
-                placeholder='Cari produk berdasarkan nama...'
-                loading={loading}
-              />
+  // Enhanced loading state with skeleton
+  if (loading && safeProducts.length === 0) {
+    return (
+      <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'>
+        {/* Loading Hero Section */}
+        <section className='py-12 sm:py-16 lg:py-24 px-4'>
+          <div className='max-w-6xl mx-auto text-center'>
+            <div className='w-16 h-16 sm:w-20 sm:h-20 mx-auto bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl animate-pulse mb-6'>
+              <TrendingUp className='w-8 h-8 sm:w-10 sm:h-10 text-white' />
             </div>
-            <div className='lg:w-64'>
-              <CategoryFilter
-                categories={safeCategories}
-                onCategoryChange={handleCategoryFilter}
-                loading={loading}
-              />
-            </div>
-          </div>
 
-          {/* ✅ Header untuk menunjukkan status */}
-          {!searchQuery && selectedCategory === null && (
-            <div className='mb-6 text-center'>
-              <h2 className='text-2xl font-bold text-gray-900 mb-2'>
-                🔥 Produk Trending Hari Ini
-              </h2>
-              <p className='text-gray-600'>
-                8 produk dengan diskon terbaik dan stok tersedia
-              </p>
-            </div>
-          )}
-
-          {/* Products Grid */}
-          <ProductGrid
-            products={displayProducts}
-            loading={loading}
-            error={error}
-            onProductClick={handleViewDetails}
-            showTrendingBadge={!searchQuery && selectedCategory === null} // ✅ Show badge only for trending view
-          />
-
-          {/* ✅ Show More Button untuk trending products */}
-          {!searchQuery &&
-            selectedCategory === null &&
-            displayProducts.length === 8 &&
-            safeProducts.length > 8 && (
-              <div className='text-center mt-8'>
-                <button
-                  onClick={() => setSearchQuery(' ')} // Trigger search mode to show all
-                  className={cn(
-                    'px-8 py-3 bg-blue-600 text-white rounded-lg font-medium',
-                    'hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500',
-                    'transition-all duration-200'
-                  )}
-                >
-                  Lihat Semua Produk ({safeProducts.length})
-                </button>
+            <div className='mb-4 sm:mb-6'>
+              <div className='flex justify-center space-x-2'>
+                <div className='w-2 h-2 sm:w-3 sm:h-3 bg-blue-600 rounded-full animate-bounce'></div>
+                <div className='w-2 h-2 sm:w-3 sm:h-3 bg-purple-600 rounded-full animate-bounce delay-100'></div>
+                <div className='w-2 h-2 sm:w-3 sm:h-3 bg-pink-600 rounded-full animate-bounce delay-200'></div>
               </div>
-            )}
-        </div>
-      </section>
+            </div>
 
-      {/* Features Section */}
-      <section className='py-16 px-4 bg-white'>
-        <div className='max-w-6xl mx-auto'>
-          <div className='text-center mb-12'>
-            <h2 className='text-3xl font-bold text-gray-900 mb-4'>
-              Fitur Unggulan
+            <h2 className='text-xl sm:text-2xl font-bold text-gray-900 mb-2'>
+              Memuat Data Terbaru
             </h2>
-            <p className='text-lg text-gray-600'>
-              Platform analytics terdepan untuk marketplace insights
+            <p className='text-sm sm:text-base text-gray-600 mb-4 sm:mb-6'>
+              Menganalisis ribuan produk dari marketplace...
             </p>
           </div>
-          <FeatureCards />
-        </div>
-      </section>
+        </section>
 
-      {/* Product Modal */}
-      {selectedProduct && (
-        <ProductModal
-          product={selectedProduct}
-          isOpen={isModalOpen}
-          onClose={handleCloseModal}
-        />
-      )}
-    </div>
+        {/* Loading Skeleton */}
+        <section className='py-8 sm:py-12 px-4'>
+          <div className='max-w-6xl mx-auto'>
+            {/* Stats Skeleton */}
+            <div className='grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8'>
+              {[...Array(4)].map((_, i) => (
+                <div
+                  key={i}
+                  className='bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-soft'
+                >
+                  <div className='flex flex-col sm:flex-row items-center sm:gap-4 text-center sm:text-left'>
+                    <div className='w-8 h-8 sm:w-12 sm:h-12 bg-gray-200 rounded-lg sm:rounded-xl mb-2 sm:mb-0 animate-pulse'></div>
+                    <div className='flex-1 space-y-2'>
+                      <div className='h-4 sm:h-6 bg-gray-200 rounded animate-pulse'></div>
+                      <div className='h-3 bg-gray-200 rounded animate-pulse'></div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Search Skeleton */}
+            <div className='bg-white rounded-2xl shadow-xl border border-gray-100 p-6 mb-8'>
+              <div className='flex flex-col lg:flex-row gap-6'>
+                <div className='flex-1 space-y-2'>
+                  <div className='h-4 bg-gray-200 rounded animate-pulse w-32'></div>
+                  <div className='h-12 bg-gray-200 rounded-lg animate-pulse'></div>
+                </div>
+                <div className='lg:w-80 space-y-2'>
+                  <div className='h-4 bg-gray-200 rounded animate-pulse w-24'></div>
+                  <div className='h-12 bg-gray-200 rounded-lg animate-pulse'></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Products Grid Skeleton */}
+            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6'>
+              {[...Array(8)].map((_, i) => (
+                <div
+                  key={i}
+                  className='bg-white rounded-xl shadow-soft p-4 space-y-3'
+                >
+                  <div className='h-48 bg-gray-200 rounded-lg animate-pulse'></div>
+                  <div className='space-y-2'>
+                    <div className='h-4 bg-gray-200 rounded animate-pulse'></div>
+                    <div className='h-4 bg-gray-200 rounded animate-pulse w-3/4'></div>
+                    <div className='h-6 bg-gray-200 rounded animate-pulse w-1/2'></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  return (
+    <ErrorBoundary>
+      <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative'>
+        {/* Offline Indicator */}
+        {!isOnline && (
+          <div className='fixed top-0 left-0 right-0 bg-red-600 text-white text-center py-2 text-sm z-50'>
+            <WifiOff className='w-4 h-4 inline mr-2' />
+            Tidak ada koneksi internet. Beberapa fitur mungkin tidak tersedia.
+          </div>
+        )}
+
+        <main>
+          {/* Hero Section */}
+          <section className='relative py-12 sm:py-16 lg:py-24 px-4 overflow-hidden'>
+            <div className='max-w-6xl mx-auto text-center relative z-10'>
+              <div className='inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium mb-6'>
+                <Sparkles className='w-4 h-4' />
+                Platform Analytics Terdepan
+                <TrendingUp className='w-4 h-4' />
+              </div>
+
+              <h1 className='text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 mb-6'>
+                Tokopedia Trends
+              </h1>
+
+              <p className='text-xl text-gray-700 max-w-3xl mx-auto mb-8 leading-relaxed'>
+                Temukan produk-produk pilihan yang sedang{' '}
+                <span className='text-blue-600 font-bold'>trending</span> dengan
+                performa terbaik dan rating{' '}
+                <span className='inline-flex items-center gap-1 text-yellow-500'>
+                  <Star className='w-5 h-5 fill-current' />
+                  tertinggi
+                </span>
+              </p>
+
+              <button className='px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-2xl shadow-2xl hover:shadow-blue-500/25 transform hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2 mx-auto'>
+                <TrendingUp className='w-5 h-5' />
+                Mulai Eksplorasi
+              </button>
+            </div>
+          </section>
+
+          {/* Stats Section */}
+          <section className='py-12 px-4'>
+            <div className='max-w-6xl mx-auto'>
+              <StatsCards
+                totalProducts={safeProducts.length}
+                totalCategories={safeCategories.length}
+              />
+            </div>
+          </section>
+
+          {/* Search and Filter Section */}
+          <section className='py-12 px-4 bg-white/50 backdrop-blur-sm'>
+            <div className='max-w-6xl mx-auto'>
+              <div className='text-center mb-8'>
+                <h2 className='text-3xl font-bold text-gray-900 mb-4'>
+                  Temukan Produk Impian Anda
+                </h2>
+                <p className='text-gray-600 max-w-2xl mx-auto'>
+                  Gunakan pencarian cerdas dan filter kategori untuk menemukan
+                  produk yang Anda cari dengan mudah
+                </p>
+              </div>
+
+              <div className='bg-white rounded-2xl shadow-xl border border-gray-100 p-6 mb-8'>
+                <div className='flex flex-col lg:flex-row gap-6'>
+                  <div className='flex-1'>
+                    <label className='block text-sm font-semibold text-gray-700 mb-2'>
+                      🔍 Pencarian Produk
+                    </label>
+                    <SearchInput
+                      onSearch={handleSearch}
+                      placeholder='Ketik nama produk yang Anda cari...'
+                      loading={loading}
+                    />
+                  </div>
+                  <div className='lg:w-80'>
+                    <label className='block text-sm font-semibold text-gray-700 mb-2'>
+                      📂 Filter Kategori
+                    </label>
+                    <CategoryFilter
+                      categories={safeCategories}
+                      onCategoryChange={handleCategoryFilter}
+                      loading={loading}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <ProductGrid
+                products={displayProducts}
+                loading={loading}
+                error={error}
+                onProductClick={handleViewDetails}
+                showTrendingBadge={!searchQuery && selectedCategory === null}
+              />
+            </div>
+          </section>
+
+          {/* Features Section */}
+          <section className='py-16 px-4 bg-white'>
+            <div className='max-w-6xl mx-auto'>
+              <div className='text-center mb-12'>
+                <h2 className='text-3xl font-bold text-gray-900 mb-4'>
+                  Fitur Unggulan
+                </h2>
+                <p className='text-lg text-gray-600'>
+                  Platform analytics terdepan untuk marketplace insights
+                </p>
+              </div>
+              <FeatureCards />
+            </div>
+          </section>
+
+          {/* Simple Footer */}
+          <footer className='bg-gray-900 text-white py-12'>
+            <div className='max-w-6xl mx-auto px-4 text-center'>
+              <h3 className='text-2xl font-bold mb-4'>Tokopedia Trends</h3>
+              <p className='text-gray-300 mb-6'>
+                Platform analytics terdepan untuk marketplace insights
+              </p>
+              <div className='flex justify-center space-x-6'>
+                <Github className='w-6 h-6 text-gray-400 hover:text-white cursor-pointer' />
+                <Twitter className='w-6 h-6 text-gray-400 hover:text-white cursor-pointer' />
+                <Linkedin className='w-6 h-6 text-gray-400 hover:text-white cursor-pointer' />
+              </div>
+              <div className='mt-8 pt-8 border-t border-gray-700'>
+                <p className='text-gray-400 text-sm'>
+                  © 2024 Tokopedia Trends. Made with{' '}
+                  <Heart className='w-4 h-4 inline text-red-500' /> in Indonesia
+                </p>
+              </div>
+            </div>
+          </footer>
+        </main>
+
+        {/* Floating Action Buttons */}
+        {showScrollTop && (
+          <button
+            onClick={handleScrollToTop}
+            className='fixed bottom-6 right-6 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center z-50'
+          >
+            <ChevronUp className='w-5 h-5' />
+          </button>
+        )}
+
+        {/* Product Modal */}
+        {selectedProduct && (
+          <Suspense fallback={<div>Loading...</div>}>
+            <ProductModal
+              product={selectedProduct}
+              isOpen={isModalOpen}
+              onClose={handleCloseModal}
+            />
+          </Suspense>
+        )}
+      </div>
+    </ErrorBoundary>
   );
 }

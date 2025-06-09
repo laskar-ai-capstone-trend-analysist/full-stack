@@ -40,6 +40,8 @@ import {
   Clock,
   WifiOff,
   AlertTriangle,
+  Brain,
+  Lightbulb,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -331,7 +333,7 @@ export default function Home() {
         <section className='py-12 sm:py-16 lg:py-24 px-4'>
           <div className='max-w-6xl mx-auto text-center'>
             <div className='w-16 h-16 sm:w-20 sm:h-20 mx-auto bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl animate-pulse mb-6'>
-              <TrendingUp className='w-8 h-8 sm:w-10 sm:h-10 text-white' />
+              <Brain className='w-8 h-8 sm:w-10 sm:h-10 text-white' />
             </div>
 
             <div className='mb-4 sm:mb-6'>
@@ -346,7 +348,7 @@ export default function Home() {
               Memuat Data Terbaru
             </h2>
             <p className='text-sm sm:text-base text-gray-600 mb-4 sm:mb-6'>
-              Menganalisis ribuan produk dari marketplace...
+              AI sedang menganalisis ribuan produk dari marketplace...
             </p>
           </div>
         </section>
@@ -424,19 +426,23 @@ export default function Home() {
           <section className='relative py-12 sm:py-16 lg:py-24 px-4 overflow-hidden'>
             <div className='max-w-6xl mx-auto text-center relative z-10'>
               <div className='inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium mb-6'>
-                <Sparkles className='w-4 h-4' />
-                Platform Analytics Terdepan
-                <TrendingUp className='w-4 h-4' />
+                <Brain className='w-4 h-4' />
+                AI-Powered Product Discovery
+                <Lightbulb className='w-4 h-4' />
               </div>
 
               <h1 className='text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 mb-6'>
-                Tokopedia Trends
+                <span className='block'>YAPin</span>
+                <span className='text-2xl md:text-3xl font-medium text-gray-600 block mt-2'>
+                  Yuk AI Pickin
+                </span>
               </h1>
 
               <p className='text-xl text-gray-700 max-w-3xl mx-auto mb-8 leading-relaxed'>
-                Temukan produk-produk pilihan yang sedang{' '}
-                <span className='text-blue-600 font-bold'>trending</span> dengan
-                performa terbaik dan rating{' '}
+                Biarkan <span className='text-blue-600 font-bold'>AI</span>{' '}
+                membantu Anda menemukan produk-produk{' '}
+                <span className='text-purple-600 font-bold'>terbaik</span>{' '}
+                dengan analisis sentiment dan rating{' '}
                 <span className='inline-flex items-center gap-1 text-yellow-500'>
                   <Star className='w-5 h-5 fill-current' />
                   tertinggi
@@ -444,8 +450,8 @@ export default function Home() {
               </p>
 
               <button className='px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-2xl shadow-2xl hover:shadow-blue-500/25 transform hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2 mx-auto'>
-                <TrendingUp className='w-5 h-5' />
-                Mulai Eksplorasi
+                <Brain className='w-5 h-5' />
+                Mulai AI Picking
               </button>
             </div>
           </section>
@@ -464,12 +470,17 @@ export default function Home() {
           <section className='py-12 px-4 bg-white/50 backdrop-blur-sm'>
             <div className='max-w-6xl mx-auto'>
               <div className='text-center mb-8'>
+                <div className='inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-full text-sm font-medium mb-4'>
+                  <Brain className='w-4 h-4' />
+                  AI Smart Search
+                  <Lightbulb className='w-4 h-4' />
+                </div>
                 <h2 className='text-3xl font-bold text-gray-900 mb-4'>
                   Temukan Produk Impian Anda
                 </h2>
                 <p className='text-gray-600 max-w-2xl mx-auto'>
-                  Gunakan pencarian cerdas dan filter kategori untuk menemukan
-                  produk yang Anda cari dengan mudah
+                  Gunakan AI-powered search dan filter cerdas untuk menemukan
+                  produk yang perfect untuk Anda
                 </p>
               </div>
 
@@ -477,11 +488,11 @@ export default function Home() {
                 <div className='flex flex-col lg:flex-row gap-6'>
                   <div className='flex-1'>
                     <label className='block text-sm font-semibold text-gray-700 mb-2'>
-                      🔍 Pencarian Produk
+                      🤖 AI Smart Search
                     </label>
                     <SearchInput
                       onSearch={handleSearch}
-                      placeholder='Ketik nama produk yang Anda cari...'
+                      placeholder='Ceritakan produk yang Anda cari...'
                       loading={loading}
                     />
                   </div>
@@ -512,58 +523,118 @@ export default function Home() {
           <section className='py-16 px-4 bg-white'>
             <div className='max-w-6xl mx-auto'>
               <div className='text-center mb-12'>
+                <div className='inline-flex items-center gap-2 bg-gradient-to-r from-green-600 to-teal-600 text-white px-4 py-2 rounded-full text-sm font-medium mb-4'>
+                  <Zap className='w-4 h-4' />
+                  Fitur AI Canggih
+                </div>
                 <h2 className='text-3xl font-bold text-gray-900 mb-4'>
-                  Fitur Unggulan
+                  Kenapa Pilih YAPin?
                 </h2>
                 <p className='text-lg text-gray-600'>
-                  Platform analytics terdepan untuk marketplace insights
+                  Platform AI-powered pertama untuk product discovery yang
+                  cerdas
                 </p>
               </div>
               <FeatureCards />
             </div>
           </section>
 
-          {/* Simple Footer */}
+          {/* Footer */}
           <footer className='bg-gray-900 text-white py-12'>
             <div className='max-w-6xl mx-auto px-4 text-center'>
-              <h3 className='text-2xl font-bold mb-4'>Tokopedia Trends</h3>
-              <p className='text-gray-300 mb-6'>
-                Platform analytics terdepan untuk marketplace insights
-              </p>
-              <div className='flex justify-center space-x-6'>
-                <Github className='w-6 h-6 text-gray-400 hover:text-white cursor-pointer' />
-                <Twitter className='w-6 h-6 text-gray-400 hover:text-white cursor-pointer' />
-                <Linkedin className='w-6 h-6 text-gray-400 hover:text-white cursor-pointer' />
+              <div className='flex items-center justify-center gap-3 mb-4'>
+                <div className='w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center'>
+                  <Brain className='w-6 h-6 text-white' />
+                </div>
+                <div>
+                  <h3 className='text-2xl font-bold'>YAPin</h3>
+                  <p className='text-sm text-gray-400'>Yuk AI Pickin</p>
+                </div>
               </div>
-              <div className='mt-8 pt-8 border-t border-gray-700'>
+              <p className='text-gray-300 mb-6'>
+                Platform AI-powered untuk product discovery yang cerdas dan
+                personal
+              </p>
+              <div className='flex justify-center space-x-6 mb-8'>
+                <Github className='w-6 h-6 text-gray-400 hover:text-white cursor-pointer transition-colors' />
+                <Twitter className='w-6 h-6 text-gray-400 hover:text-white cursor-pointer transition-colors' />
+                <Linkedin className='w-6 h-6 text-gray-400 hover:text-white cursor-pointer transition-colors' />
+                <Instagram className='w-6 h-6 text-gray-400 hover:text-white cursor-pointer transition-colors' />
+              </div>
+              <div className='pt-8 border-t border-gray-700'>
                 <p className='text-gray-400 text-sm'>
-                  © 2024 Tokopedia Trends. Made with{' '}
-                  <Heart className='w-4 h-4 inline text-red-500' /> in Indonesia
+                  © 2025 YAPin - Yuk AI Pickin. Made with{' '}
+                  <Heart className='w-4 h-4 inline text-red-500' /> and Laskar
+                  AI in Indonesia
                 </p>
               </div>
             </div>
           </footer>
         </main>
 
-        {/* Floating Action Buttons */}
-        {showScrollTop && (
+        {/* Enhanced Floating Action Buttons */}
+        <div className='fixed bottom-6 right-6 z-50 space-y-3'>
+          {showScrollTop && (
+            <button
+              onClick={handleScrollToTop}
+              className='w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group'
+              title='Kembali ke atas'
+            >
+              <ChevronUp className='w-5 h-5' />
+            </button>
+          )}
+
           <button
-            onClick={handleScrollToTop}
-            className='fixed bottom-6 right-6 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center z-50'
+            className='w-12 h-12 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group'
+            title='AI Assistant'
           >
-            <ChevronUp className='w-5 h-5' />
+            <Brain className='w-5 h-5' />
+            <div className='absolute right-14 bg-gray-900 text-white px-3 py-1 rounded-lg text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none'>
+              AI Assistant
+            </div>
           </button>
-        )}
+        </div>
 
         {/* Product Modal */}
         {selectedProduct && (
-          <Suspense fallback={<div>Loading...</div>}>
+          <Suspense
+            fallback={
+              <div className='fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center'>
+                <div className='bg-white rounded-xl p-6 shadow-2xl flex items-center gap-3'>
+                  <Brain className='w-6 h-6 text-blue-600 animate-pulse' />
+                  <span className='text-gray-700 font-medium'>
+                    AI sedang memproses detail produk...
+                  </span>
+                </div>
+              </div>
+            }
+          >
             <ProductModal
               product={selectedProduct}
               isOpen={isModalOpen}
               onClose={handleCloseModal}
             />
           </Suspense>
+        )}
+
+        {/* AI Status Indicator */}
+        <div className='fixed top-4 left-4 z-40'>
+          <div className='bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 shadow-lg border border-gray-200'>
+            <div className='flex items-center gap-2'>
+              <div className='w-2 h-2 bg-green-500 rounded-full animate-pulse'></div>
+              <span className='text-xs font-medium text-gray-700'>
+                AI Online
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Performance monitoring in development */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className='fixed bottom-4 left-4 bg-black/80 text-white text-xs p-2 rounded font-mono'>
+            Screen: {screenSize} | Products: {safeProducts.length} | Loading:{' '}
+            {loading ? 'Yes' : 'No'}
+          </div>
         )}
       </div>
     </ErrorBoundary>

@@ -4,13 +4,15 @@
 export interface Product {
   id: number;
   name: string;
-  price: number;
-  originalPrice?: number;
-  description?: string;
+  currentPrice: number; // ✅ Sesuai backend
+  originalPrice: number; // ✅ Sesuai backend
+  imgUrl: string; // ✅ Sesuai backend (bukan imageUrl)
+  stock: number;
   categoryId: number;
+  discount: number;
+  // Optional fields
+  description?: string;
   rating?: number;
-  stock?: number;
-  imageUrl?: string;
   reviewCount?: number;
 }
 

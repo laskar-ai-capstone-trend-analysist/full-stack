@@ -66,10 +66,10 @@ const ProductModal: React.FC<ProductModalProps> = ({
 
           <div className='grid grid-cols-1 lg:grid-cols-2 gap-8 p-6'>
             {/* Product Image */}
-            <div className='aspect-square rounded-xl overflow-hidden bg-gray-100'>
-              {product.imageUrl ? (
+            <div className='w-full h-64 bg-gray-100 rounded-lg overflow-hidden mb-6'>
+              {product.imgUrl ? ( // ✅ Gunakan imgUrl
                 <img
-                  src={product.imageUrl}
+                  src={product.imgUrl}
                   alt={product.name}
                   className='w-full h-full object-cover'
                   onError={(e) => {
@@ -77,7 +77,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
                   }}
                 />
               ) : (
-                <div className='w-full h-full flex items-center justify-center'>
+                <div className='w-full h-full flex items-center justify-center bg-gray-200'>
                   <Package className='w-16 h-16 text-gray-400' />
                 </div>
               )}
@@ -103,27 +103,30 @@ const ProductModal: React.FC<ProductModalProps> = ({
                 </div>
               )}
 
-              {/* Price */}
+              {/* Price Section */}
               <div className='mb-6'>
-                <span className='text-3xl font-bold text-gray-900'>
-                  {formatCurrency(product.price)}
-                </span>
-                {product.originalPrice &&
-                  product.originalPrice > product.price && (
-                    <div className='flex items-center space-x-3 mt-2'>
-                      <span className='text-lg text-gray-500 line-through'>
-                        {formatCurrency(product.originalPrice)}
-                      </span>
-                      <span className='px-2 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full'>
-                        {Math.round(
-                          ((product.originalPrice - product.price) /
-                            product.originalPrice) *
-                            100
-                        )}
-                        % OFF
-                      </span>
-                    </div>
-                  )}
+                <div className='flex items-baseline space-x-3'>
+                  <span className='text-3xl font-bold text-blue-600'>
+                    {formatCurrency(product.currentPrice)}{' '}
+                    {/* ✅ Gunakan currentPrice */}
+                  </span>
+                  {product.originalPrice &&
+                    product.originalPrice > product.currentPrice && (
+                      <div className='flex items-center space-x-3 mt-2'>
+                        <span className='text-lg text-gray-500 line-through'>
+                          {formatCurrency(product.originalPrice)}
+                        </span>
+                        <span className='px-2 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full'>
+                          {Math.round(
+                            ((product.originalPrice - product.currentPrice) /
+                              product.originalPrice) *
+                              100
+                          )}
+                          % OFF
+                        </span>
+                      </div>
+                    )}
+                </div>
               </div>
 
               {/* Stock Info */}

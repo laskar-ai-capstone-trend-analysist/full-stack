@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useProducts } from '@/hooks/useProducts';
 import { useCategories } from '@/hooks/useCategories';
-import { Product } from '@/hooks/useProducts';
+import { Product } from '@/lib/types'; // ✅ Import dari types bukan dari hook
 import ProductGrid from '@/components/product/ProductGrid';
 import SearchInput from '@/components/ui/SearchInput';
 import CategoryFilter from '@/components/ui/CategoryFilter';

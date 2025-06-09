@@ -138,6 +138,39 @@ export function useProducts() {
     []
   );
 
+  // ✅ Tambahkan fungsi untuk mendapatkan trending products
+  const getTrendingProducts = useCallback(
+    (limit: number = 8) => {
+      if (!Array.isArray(products)) return [];
+
+      // Sort berdasarkan kriteria trending:
+      // 1. Discount tertinggi
+      // 2. Stock tersedia
+      // 3. Harga competitive
+      return products
+        .filter((product) => product && product.stock > 0) // Hanya produk yang tersedia
+        .sort((a, b) => {
+          // Primary: Discount tertinggi
+          const discountA = a.discount || 0;
+          const discountB = b.discount || 0;
+          if (discountB !== discountA) {
+            return discountB - discountA;
+          }
+
+          // Secondary: Stock terbanyak
+          const stockDiff = b.stock - a.stock;
+          if (stockDiff !== 0) {
+            return stockDiff;
+          }
+
+          // Tertiary: Harga terendah
+          return a.currentPrice - b.currentPrice;
+        })
+        .slice(0, limit);
+    },
+    [products]
+  );
+
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
@@ -150,5 +183,6 @@ export function useProducts() {
     searchProducts,
     filterByCategory,
     getProductById,
+    getTrendingProducts, // ✅ Export fungsi baru
   };
 }

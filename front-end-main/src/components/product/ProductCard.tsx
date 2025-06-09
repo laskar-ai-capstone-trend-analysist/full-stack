@@ -7,15 +7,17 @@ import { cn } from '@/lib/utils';
 
 interface ProductCardProps {
   product: Product;
-  onClick?: () => void;
+  onClick?: (product: Product) => void;
   className?: string;
+  showTrendingBadge?: boolean; // ✅ Add optional trending badge
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({
+const ProductCard = ({
   product,
   onClick,
   className,
-}) => {
+  showTrendingBadge = false,
+}: ProductCardProps) => {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -47,6 +49,15 @@ const ProductCard: React.FC<ProductCardProps> = ({
         ) : (
           <div className='w-full h-full flex items-center justify-center bg-gray-200'>
             <ShoppingCart className='w-12 h-12 text-gray-400' />
+          </div>
+        )}
+
+        {/* ✅ Trending Badge */}
+        {showTrendingBadge && (
+          <div className='absolute top-2 left-2'>
+            <span className='px-2 py-1 text-xs font-bold bg-red-500 text-white rounded-full flex items-center'>
+              🔥 Trending
+            </span>
           </div>
         )}
 
@@ -105,7 +116,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           disabled={product.stock === 0}
           onClick={(e) => {
             e.stopPropagation();
-            onClick?.();
+            onClick?.(product);
           }}
         >
           {product.stock === 0 ? 'Stok Habis' : 'Lihat Detail'}

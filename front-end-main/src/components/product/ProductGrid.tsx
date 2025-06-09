@@ -6,10 +6,11 @@ import ProductCard from './ProductCard';
 import { Loader2, AlertTriangle, Package } from 'lucide-react';
 
 interface ProductGridProps {
-  products: Product[] | null | undefined;
+  products: Product[];
   loading?: boolean;
   error?: string | null;
   onProductClick?: (product: Product) => void;
+  showTrendingBadge?: boolean; // ✅ Add trending badge prop
 }
 
 const ProductGrid: React.FC<ProductGridProps> = ({
@@ -17,6 +18,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
   loading = false,
   error = null,
   onProductClick,
+  showTrendingBadge = false,
 }) => {
   // ✅ Safe array handling with multiple checks
   const safeProducts = React.useMemo(() => {
@@ -81,6 +83,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({
           key={product.id}
           product={product}
           onClick={() => onProductClick?.(product)}
+          showTrendingBadge={showTrendingBadge} // ✅ Pass trending badge prop
         />
       ))}
     </div>

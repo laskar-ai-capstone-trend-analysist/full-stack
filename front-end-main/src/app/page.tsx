@@ -16,9 +16,15 @@ import {
   BarChart3,
   Wifi,
   WifiOff,
+  Sparkles,
+  Heart,
+  Share2,
+  ChevronUp,
+  ArrowRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ProductRecommendations from '@/components/product/ProductRecommendations';
+import Footer from '@/components/layout/Footer';
 
 // Lazy load heavy components for better performance
 const ProductModal = lazy(() => import('@/components/product/ProductModal'));
@@ -41,17 +47,20 @@ class ErrorBoundary extends React.Component {
   render() {
     if ((this.state as any).hasError) {
       return (
-        <div className='min-h-screen flex items-center justify-center'>
-          <div className='text-center'>
-            <h2 className='text-xl font-semibold text-gray-900 mb-2'>
+        <div className='min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-pink-50'>
+          <div className='text-center max-w-md mx-auto p-8'>
+            <div className='w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6'>
+              <WifiOff className='w-10 h-10 text-red-500' />
+            </div>
+            <h2 className='text-2xl font-bold text-gray-900 mb-4'>
               Oops! Terjadi kesalahan
             </h2>
-            <p className='text-gray-600 mb-4'>
+            <p className='text-gray-600 mb-6 leading-relaxed'>
               Silakan refresh halaman untuk mencoba lagi.
             </p>
             <button
               onClick={() => window.location.reload()}
-              className='px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700'
+              className='px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all duration-200 transform hover:scale-105 shadow-lg'
             >
               Refresh Halaman
             </button>
@@ -93,6 +102,7 @@ export default function Home() {
   );
   const [retryCount, setRetryCount] = useState(0);
   const [isOnline, setIsOnline] = useState(true);
+  const [isHeroAnimated, setIsHeroAnimated] = useState(false);
 
   // ✅ State untuk rekomendasi di homepage
   const [showRecommendations, setShowRecommendations] = useState(false);
@@ -304,6 +314,12 @@ export default function Home() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Hero animation trigger
+  useEffect(() => {
+    const timer = setTimeout(() => setIsHeroAnimated(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Clear recommendations when search or category changes
   useEffect(() => {
     if (searchQuery || selectedCategory !== null) {
@@ -315,45 +331,49 @@ export default function Home() {
   // Show error state
   if (error && safeProducts.length === 0) {
     return (
-      <div className='min-h-screen flex items-center justify-center bg-gray-50'>
-        <div className='max-w-md mx-auto text-center'>
-          <div className='mb-6'>
-            <div className='w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4'>
-              <WifiOff className='w-10 h-10 text-red-500' />
+      <div className='min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 via-pink-50 to-purple-50'>
+        <div className='max-w-md mx-auto text-center p-8'>
+          <div className='mb-8'>
+            <div className='w-24 h-24 bg-gradient-to-br from-red-400 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl'>
+              <WifiOff className='w-12 h-12 text-white' />
             </div>
-            <h2 className='text-2xl font-bold text-gray-900 mb-2'>
+            <h2 className='text-3xl font-bold text-gray-900 mb-4'>
               Gagal Memuat Data
             </h2>
-            <p className='text-gray-600 mb-6'>{error}</p>
+            <p className='text-gray-600 mb-8 text-lg leading-relaxed'>
+              {error}
+            </p>
           </div>
 
-          <div className='flex flex-col sm:flex-row gap-3 justify-center'>
+          <div className='flex flex-col sm:flex-row gap-4 justify-center'>
             <button
               onClick={handleRetry}
               disabled={retryCount >= 3}
               className={cn(
-                'flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors',
+                'flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-semibold transition-all duration-200 transform',
                 retryCount >= 3
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 hover:scale-105 shadow-lg'
               )}
             >
-              {retryCount < 3 && <RefreshCw className='w-4 h-4' />}
+              {retryCount < 3 && <RefreshCw className='w-5 h-5' />}
               {retryCount >= 3 ? 'Batas Percobaan Tercapai' : 'Coba Lagi'}
             </button>
 
             <button
               onClick={() => window.location.reload()}
-              className='px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors'
+              className='px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 transform hover:scale-105 font-semibold'
             >
               Muat Ulang Halaman
             </button>
           </div>
 
           {retryCount >= 3 && (
-            <p className='text-sm text-gray-500 mt-4'>
-              Jika masalah berlanjut, silakan hubungi tim support kami.
-            </p>
+            <div className='mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-xl'>
+              <p className='text-sm text-yellow-800'>
+                Jika masalah berlanjut, silakan hubungi tim support kami.
+              </p>
+            </div>
           )}
         </div>
       </div>
@@ -365,29 +385,45 @@ export default function Home() {
     return (
       <div className='min-h-screen bg-gray-50'>
         {/* Loading Hero Section */}
-        <div className='bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600'>
-          <div className='container mx-auto px-4 py-16'>
-            <div className='text-center'>
-              <div className='w-32 h-8 bg-white/20 rounded mx-auto mb-4 animate-pulse'></div>
-              <div className='w-96 h-6 bg-white/10 rounded mx-auto mb-8 animate-pulse'></div>
-              <div className='w-80 h-12 bg-white/20 rounded mx-auto animate-pulse'></div>
+        <div className='bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 relative overflow-hidden'>
+          <div className='absolute inset-0 bg-white/5'>
+            <div
+              className='absolute inset-0'
+              style={{
+                backgroundImage:
+                  'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.2) 1px, transparent 0)',
+                backgroundSize: '30px 30px',
+              }}
+            ></div>
+          </div>
+
+          <div className='container mx-auto px-4 py-20 relative z-10'>
+            <div className='text-center max-w-4xl mx-auto'>
+              <div className='w-40 h-12 bg-white/20 rounded-xl mx-auto mb-6 animate-pulse'></div>
+              <div className='w-96 h-8 bg-white/10 rounded-xl mx-auto mb-10 animate-pulse'></div>
+              <div className='w-full max-w-2xl h-16 bg-white/20 rounded-full mx-auto animate-pulse'></div>
             </div>
           </div>
         </div>
 
         {/* Loading Product Grid */}
-        <div className='container mx-auto px-4 py-8'>
-          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
+        <div className='container mx-auto px-4 py-12'>
+          <div className='mb-8'>
+            <div className='w-48 h-8 bg-gray-200 rounded mb-2 animate-pulse'></div>
+            <div className='w-32 h-6 bg-gray-200 rounded animate-pulse'></div>
+          </div>
+
+          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8'>
             {[...Array(8)].map((_, i) => (
               <div
                 key={i}
-                className='bg-white rounded-lg border border-gray-200 overflow-hidden animate-pulse'
+                className='bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm animate-pulse'
               >
                 <div className='aspect-square bg-gray-200'></div>
-                <div className='p-4 space-y-3'>
-                  <div className='h-4 bg-gray-200 rounded w-3/4'></div>
+                <div className='p-6 space-y-4'>
+                  <div className='h-5 bg-gray-200 rounded w-3/4'></div>
                   <div className='h-4 bg-gray-200 rounded w-1/2'></div>
-                  <div className='h-6 bg-gray-200 rounded w-2/3'></div>
+                  <div className='h-7 bg-gray-200 rounded w-2/3'></div>
                 </div>
               </div>
             ))}
@@ -402,178 +438,274 @@ export default function Home() {
       <div className='min-h-screen bg-gray-50'>
         {/* Online/Offline Indicator */}
         {!isOnline && (
-          <div className='bg-red-500 text-white text-center py-2 text-sm'>
+          <div className='bg-gradient-to-r from-red-500 to-pink-500 text-white text-center py-3 text-sm font-medium shadow-lg'>
             <WifiOff className='w-4 h-4 inline mr-2' />
             Anda sedang offline. Beberapa fitur mungkin tidak tersedia.
           </div>
         )}
 
-        {/* Hero Section with Enhanced Design */}
+        {/* Enhanced Hero Section */}
         <div className='bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 relative overflow-hidden'>
-          {/* Background Pattern */}
+          {/* Animated Background Pattern */}
           <div className='absolute inset-0 bg-white/5'>
             <div
-              className='absolute inset-0'
+              className='absolute inset-0 animate-pulse'
               style={{
                 backgroundImage:
                   'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)',
-                backgroundSize: '20px 20px',
+                backgroundSize: '30px 30px',
               }}
             ></div>
           </div>
 
-          <div className='container mx-auto px-4 py-16 relative z-10'>
-            <div className='text-center max-w-4xl mx-auto'>
-              <h1 className='text-4xl md:text-6xl font-bold text-white mb-6 leading-tight'>
-                YAPin - Yuk AI Pickin 🤖
-              </h1>
-              <p className='text-xl md:text-2xl text-white/90 mb-8 leading-relaxed'>
+          {/* Floating Elements */}
+          <div className='absolute top-20 left-10 w-20 h-20 bg-white/10 rounded-full blur-xl animate-float'></div>
+          <div
+            className='absolute top-40 right-20 w-32 h-32 bg-pink-300/20 rounded-full blur-2xl animate-float'
+            style={{ animationDelay: '2s' }}
+          ></div>
+          <div
+            className='absolute bottom-20 left-1/4 w-24 h-24 bg-blue-300/20 rounded-full blur-xl animate-float'
+            style={{ animationDelay: '4s' }}
+          ></div>
+
+          <div className='container mx-auto px-4 py-20 relative z-10'>
+            <div
+              className={cn(
+                'text-center max-w-5xl mx-auto transition-all duration-1000',
+                isHeroAnimated
+                  ? 'opacity-100 translate-y-0'
+                  : 'opacity-0 translate-y-8'
+              )}
+            >
+              {/* Brand Title with Icon */}
+              <div className='flex items-center justify-center gap-4 mb-6'>
+                <div className='w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center'>
+                  <Sparkles className='w-8 h-8 text-white' />
+                </div>
+                <h1 className='text-4xl md:text-7xl font-bold text-white leading-tight'>
+                  YAPin
+                </h1>
+              </div>
+
+              <p className='text-xl md:text-3xl text-white/90 mb-4 font-light'>
+                Yuk AI Pickin 🤖
+              </p>
+
+              <p className='text-lg md:text-xl text-white/80 mb-12 leading-relaxed max-w-3xl mx-auto'>
                 Platform AI-powered untuk product discovery yang cerdas dan
-                personal
+                personal. Temukan produk terbaik dengan bantuan artificial
+                intelligence.
               </p>
 
               {/* Enhanced Search Bar */}
-              <div className='max-w-2xl mx-auto mb-8'>
-                <div className='relative'>
-                  <input
-                    type='text'
-                    placeholder='Ceritakan produk yang Anda cari...'
-                    value={searchQuery}
-                    onChange={(e) => handleSearch(e.target.value)}
-                    className='w-full px-6 py-4 pr-14 text-lg rounded-full border-0 shadow-lg focus:ring-4 focus:ring-white/20 focus:outline-none transition-all'
-                  />
-                  <Search className='absolute right-5 top-1/2 transform -translate-y-1/2 w-6 h-6 text-gray-400' />
+              <div className='max-w-3xl mx-auto mb-12'>
+                <div className='relative group'>
+                  <div className='absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full blur-xl group-hover:blur-2xl transition-all duration-300 opacity-30'></div>
+                  <div className='relative bg-white/95 backdrop-blur-sm rounded-full p-2 shadow-2xl'>
+                    <div className='flex items-center'>
+                      <input
+                        type='text'
+                        placeholder='Ceritakan produk yang Anda cari...'
+                        value={searchQuery}
+                        onChange={(e) => handleSearch(e.target.value)}
+                        className='flex-1 px-6 py-4 text-lg bg-transparent border-0 focus:ring-0 focus:outline-none placeholder-gray-500 text-gray-900'
+                      />
+                      <button className='bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 rounded-full hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg'>
+                        <Search className='w-6 h-6' />
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Category Filter */}
-                <div className='mt-4 flex justify-center'>
-                  <select
-                    value={selectedCategory || ''}
-                    onChange={(e) =>
-                      handleCategoryFilter(
-                        e.target.value ? Number(e.target.value) : null
-                      )
-                    }
-                    className='px-4 py-2 rounded-full bg-white backdrop-blur-sm border border-gray-200 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm'
-                  >
-                    <option value='' className='text-gray-700'>
-                      Semua Kategori
-                    </option>
-                    {safeCategories.map((category) => (
-                      <option
-                        key={category.id}
-                        value={category.id}
-                        className='text-gray-700'
-                      >
-                        {category.name}
+                <div className='mt-6 flex justify-center'>
+                  <div className='relative'>
+                    <select
+                      value={selectedCategory || ''}
+                      onChange={(e) =>
+                        handleCategoryFilter(
+                          e.target.value ? Number(e.target.value) : null
+                        )
+                      }
+                      className='appearance-none px-6 py-3 pr-10 rounded-full bg-white/90 backdrop-blur-sm border border-white/20 text-gray-700 focus:ring-2 focus:ring-white/30 focus:outline-none shadow-lg font-medium'
+                    >
+                      <option value='' className='text-gray-700'>
+                        Semua Kategori
                       </option>
-                    ))}
-                  </select>
+                      {safeCategories.map((category) => (
+                        <option
+                          key={category.id}
+                          value={category.id}
+                          className='text-gray-700'
+                        >
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                    <Filter className='absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none' />
+                  </div>
                 </div>
               </div>
 
-              {/* Stats Section */}
+              {/* Enhanced Stats Section */}
               <div
                 id='stats-section'
                 className={cn(
-                  'grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto transition-all duration-1000',
+                  'grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto transition-all duration-1000',
                   isStatsVisible
                     ? 'opacity-100 translate-y-0'
                     : 'opacity-70 translate-y-4'
                 )}
               >
-                <div className='bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center'>
-                  <ShoppingBag className='w-8 h-8 text-white mx-auto mb-2' />
-                  <div className='text-2xl font-bold text-white'>
+                <div className='bg-white/10 backdrop-blur-md rounded-2xl p-8 text-center border border-white/20 hover:bg-white/15 transition-all duration-300 group'>
+                  <div className='w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300'>
+                    <ShoppingBag className='w-8 h-8 text-white' />
+                  </div>
+                  <div className='text-3xl font-bold text-white mb-2'>
                     {safeProducts.length.toLocaleString()}
                   </div>
-                  <div className='text-white/80'>Produk Tersedia</div>
+                  <div className='text-white/80 font-medium'>
+                    Produk Tersedia
+                  </div>
                 </div>
-                <div className='bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center'>
-                  <Users className='w-8 h-8 text-white mx-auto mb-2' />
-                  <div className='text-2xl font-bold text-white'>10K+</div>
-                  <div className='text-white/80'>Review Pelanggan</div>
+
+                <div className='bg-white/10 backdrop-blur-md rounded-2xl p-8 text-center border border-white/20 hover:bg-white/15 transition-all duration-300 group'>
+                  <div className='w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300'>
+                    <Users className='w-8 h-8 text-white' />
+                  </div>
+                  <div className='text-3xl font-bold text-white mb-2'>10K+</div>
+                  <div className='text-white/80 font-medium'>
+                    Review Pelanggan
+                  </div>
                 </div>
-                <div className='bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center'>
-                  <BarChart3 className='w-8 h-8 text-white mx-auto mb-2' />
-                  <div className='text-2xl font-bold text-white'>
+
+                <div className='bg-white/10 backdrop-blur-md rounded-2xl p-8 text-center border border-white/20 hover:bg-white/15 transition-all duration-300 group'>
+                  <div className='w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300'>
+                    <BarChart3 className='w-8 h-8 text-white' />
+                  </div>
+                  <div className='text-3xl font-bold text-white mb-2'>
                     {safeCategories.length}
                   </div>
-                  <div className='text-white/80'>Kategori Produk</div>
+                  <div className='text-white/80 font-medium'>
+                    Kategori Produk
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Products Section */}
-        <div className='container mx-auto px-4 py-12'>
+        {/* Enhanced Products Section */}
+        <div className='container mx-auto px-4 py-16'>
           {/* Section Header */}
-          <div className='flex items-center justify-between mb-8'>
+          <div className='flex items-center justify-between mb-12'>
             <div>
-              <h2 className='text-2xl font-bold text-gray-900 mb-2'>
+              <h2 className='text-3xl font-bold text-gray-900 mb-3'>
                 {searchQuery
                   ? `Hasil Pencarian: "${searchQuery}"`
                   : selectedCategory
                     ? 'Produk Berdasarkan Kategori'
                     : 'Produk Trending'}
               </h2>
-              <p className='text-gray-600'>
-                Menampilkan {displayProducts.length} dari {safeProducts.length}{' '}
+              <p className='text-gray-600 text-lg'>
+                Menampilkan{' '}
+                <span className='font-semibold text-blue-600'>
+                  {displayProducts.length}
+                </span>{' '}
+                dari{' '}
+                <span className='font-semibold'>{safeProducts.length}</span>{' '}
                 produk
               </p>
             </div>
 
             <button
               onClick={refetchProducts}
-              className='flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors'
+              className='flex items-center gap-2 px-6 py-3 text-gray-600 hover:text-white bg-white hover:bg-gradient-to-r hover:from-blue-600 hover:to-purple-600 border border-gray-200 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-sm hover:shadow-lg'
             >
-              <RefreshCw className='w-4 h-4' />
+              <RefreshCw className='w-5 h-5' />
               Refresh
             </button>
           </div>
 
-          {/* Products Grid */}
+          {/* Enhanced Products Grid */}
           {displayProducts.length > 0 ? (
-            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12'>
-              {displayProducts.map((product) => (
+            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 mb-16'>
+              {displayProducts.map((product, index) => (
                 <div
                   key={product.id}
-                  className='bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-200 cursor-pointer group'
+                  className={cn(
+                    'bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group transform hover:-translate-y-2',
+                    'animate-fade-in-up'
+                  )}
+                  style={{ animationDelay: `${index * 100}ms` }}
                   onClick={() => handleProductClick(product)}
                 >
                   {/* Product Image */}
-                  <div className='relative aspect-square'>
+                  <div className='relative aspect-square overflow-hidden'>
                     <img
                       src={product.imgUrl}
                       alt={product.name}
-                      className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-200'
+                      className='w-full h-full object-cover group-hover:scale-110 transition-transform duration-500'
                       loading='lazy'
                     />
-                    {product.discount > 0 && (
-                      <div className='absolute top-2 left-2'>
-                        <span className='bg-red-500 text-white text-xs px-2 py-1 rounded-full font-medium'>
+
+                    {/* Gradient Overlay */}
+                    <div className='absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300'></div>
+
+                    {/* Badges */}
+                    <div className='absolute top-4 left-4 flex flex-col gap-2'>
+                      {product.discount > 0 && (
+                        <span className='bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm px-3 py-1.5 rounded-full font-semibold shadow-lg'>
                           -{product.discount}%
                         </span>
-                      </div>
-                    )}
+                      )}
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className='absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0'>
+                      <button className='w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors shadow-lg'>
+                        <Heart className='w-5 h-5 text-gray-600 hover:text-red-500' />
+                      </button>
+                      <button className='w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors shadow-lg'>
+                        <Share2 className='w-5 h-5 text-gray-600' />
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Product Info */}
-                  <div className='p-4'>
-                    <h3 className='font-medium text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors'>
+                  {/* Enhanced Product Info */}
+                  <div className='p-6'>
+                    <h3 className='font-semibold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors leading-relaxed'>
                       {product.name}
                     </h3>
 
-                    <div className='flex items-center gap-1 mb-2'>
-                      <Star className='w-4 h-4 fill-yellow-400 text-yellow-400' />
-                      <span className='text-sm text-gray-600'>4.5</span>
-                      <span className='text-xs text-gray-400'>(123)</span>
+                    {/* Rating */}
+                    <div className='flex items-center gap-2 mb-4'>
+                      <div className='flex items-center gap-1'>
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={cn(
+                              'w-4 h-4',
+                              i < 4
+                                ? 'fill-yellow-400 text-yellow-400'
+                                : 'text-gray-300'
+                            )}
+                          />
+                        ))}
+                      </div>
+                      <span className='text-sm font-medium text-gray-600'>
+                        4.5
+                      </span>
+                      <span className='text-xs text-gray-400'>
+                        (123 ulasan)
+                      </span>
                     </div>
 
-                    <div className='space-y-1'>
-                      <div className='flex items-center gap-2'>
-                        <span className='text-lg font-semibold text-gray-900'>
+                    {/* Price */}
+                    <div className='space-y-2 mb-4'>
+                      <div className='flex items-center gap-3'>
+                        <span className='text-xl font-bold text-gray-900'>
                           {new Intl.NumberFormat('id-ID', {
                             style: 'currency',
                             currency: 'IDR',
@@ -591,10 +723,11 @@ export default function Home() {
                         )}
                       </div>
 
+                      {/* Stock & Trending */}
                       <div className='flex items-center justify-between'>
                         <span
                           className={cn(
-                            'text-xs px-2 py-1 rounded-full',
+                            'text-xs px-3 py-1.5 rounded-full font-medium',
                             product.stock > 0
                               ? 'bg-green-100 text-green-700'
                               : 'bg-red-100 text-red-700'
@@ -604,23 +737,33 @@ export default function Home() {
                             ? `Stok: ${product.stock}`
                             : 'Habis'}
                         </span>
-                        <TrendingUp className='w-4 h-4 text-gray-400' />
+                        <div className='flex items-center gap-1 text-orange-500'>
+                          <TrendingUp className='w-4 h-4' />
+                          <span className='text-xs font-medium'>Trending</span>
+                        </div>
                       </div>
                     </div>
+
+                    {/* CTA Button */}
+                    <button className='w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg opacity-0 group-hover:opacity-100'>
+                      Lihat Detail
+                      <ArrowRight className='w-4 h-4 inline ml-2' />
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className='text-center py-12'>
-              <div className='w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4'>
-                <Search className='w-10 h-10 text-gray-400' />
+            <div className='text-center py-20'>
+              <div className='w-32 h-32 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mx-auto mb-8'>
+                <Search className='w-16 h-16 text-gray-400' />
               </div>
-              <h3 className='text-xl font-medium text-gray-900 mb-2'>
+              <h3 className='text-2xl font-semibold text-gray-900 mb-4'>
                 Tidak ada produk ditemukan
               </h3>
-              <p className='text-gray-600 mb-6'>
-                Coba ubah kata kunci pencarian atau filter kategori
+              <p className='text-gray-600 mb-8 text-lg leading-relaxed max-w-md mx-auto'>
+                Coba ubah kata kunci pencarian atau filter kategori untuk
+                menemukan produk yang Anda cari
               </p>
               <button
                 onClick={() => {
@@ -628,19 +771,29 @@ export default function Home() {
                   setSelectedCategory(null);
                   refetchProducts();
                 }}
-                className='px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors'
+                className='px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg font-semibold'
               >
                 Tampilkan Semua Produk
+                <ArrowRight className='w-5 h-5 inline ml-2' />
               </button>
             </div>
           )}
 
-          {/* ✅ Recommendations Section - Muncul di Homepage */}
+          {/* ✅ Enhanced Recommendations Section */}
           {showRecommendations && recommendationProductId && (
-            <div className='mt-16 pt-8 border-t border-gray-200'>
+            <div className='mt-20 pt-12 border-t border-gray-200'>
+              <div className='text-center mb-12'>
+                <h3 className='text-3xl font-bold text-gray-900 mb-4'>
+                  Mungkin Anda Juga Suka
+                </h3>
+                <p className='text-gray-600 text-lg'>
+                  Rekomendasi produk serupa berdasarkan AI analysis
+                </p>
+              </div>
+
               <ProductRecommendations
                 productId={recommendationProductId}
-                title='Mungkin Anda Juga Suka'
+                title=''
                 maxItems={8}
                 onProductClick={(recommendedProduct) => {
                   // Convert dan buka modal untuk produk yang direkomendasikan
@@ -658,7 +811,7 @@ export default function Home() {
                   // Update rekomendasi untuk produk baru
                   setRecommendationProductId(product.id);
                 }}
-                className='bg-gray-50 rounded-xl p-6'
+                className='bg-gradient-to-br from-blue-50 to-purple-50 rounded-3xl p-8 border border-blue-100'
               />
             </div>
           )}
@@ -668,8 +821,11 @@ export default function Home() {
         {isModalOpen && (
           <React.Suspense
             fallback={
-              <div className='fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50'>
-                <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-white'></div>
+              <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm'>
+                <div className='bg-white rounded-2xl p-8 flex items-center gap-4'>
+                  <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'></div>
+                  <span className='text-gray-700 font-medium'>Memuat...</span>
+                </div>
               </div>
             }
           >
@@ -682,13 +838,16 @@ export default function Home() {
           </React.Suspense>
         )}
 
-        {/* Scroll to Top Button */}
+        {/* Enhanced Footer */}
+        <Footer />
+
+        {/* Enhanced Scroll to Top Button */}
         {showScrollTop && (
           <button
             onClick={handleScrollToTop}
-            className='fixed bottom-6 right-6 z-40 p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all duration-200 transform hover:scale-110'
+            className='fixed bottom-8 right-8 z-40 p-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full shadow-2xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-110 hover:-translate-y-1'
           >
-            <ChevronDown className='w-5 h-5 rotate-180' />
+            <ChevronUp className='w-6 h-6' />
           </button>
         )}
       </div>

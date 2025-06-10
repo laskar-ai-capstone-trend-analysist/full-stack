@@ -149,15 +149,23 @@ export function useProducts() {
 
   // ✅ Tambahkan fungsi untuk mendapatkan trending products
   const getTrendingProducts = useCallback(
-    (limit: number = 8) => {
-      if (!Array.isArray(products)) return [];
+    (limit = 8) => {
+      if (!Array.isArray(products) || products.length === 0) {
+        console.log('No products available for trending');
+        return [];
+      }
 
-      // Sort berdasarkan kriteria trending:
-      // 1. Discount tertinggi
-      // 2. Stock tersedia
-      // 3. Harga competitive
-      return products
-        .filter((product) => product && product.stock > 0) // Hanya produk yang tersedia
+      // Filter produk yang tersedia dan sort berdasarkan kriteria trending
+      const availableProducts = products.filter(
+        (product) => product && product.stock > 0
+      );
+
+      if (availableProducts.length === 0) {
+        console.log('No products with stock available');
+        return products.slice(0, limit); // Return all products if none have stock
+      }
+
+      return availableProducts
         .sort((a, b) => {
           // Primary: Discount tertinggi
           const discountA = a.discount || 0;

@@ -116,7 +116,16 @@ export default function Home() {
 
   // Memoized display products with performance optimization
   const displayProducts = useMemo(() => {
-    if (!Array.isArray(safeProducts)) return [];
+    console.log('Computing displayProducts:', {
+      safeProductsLength: safeProducts.length,
+      searchQuery,
+      selectedCategory,
+    });
+
+    if (!Array.isArray(safeProducts) || safeProducts.length === 0) {
+      console.log('No safe products available');
+      return [];
+    }
 
     let filtered = [...safeProducts];
 
@@ -126,6 +135,7 @@ export default function Home() {
       filtered = filtered.filter((product) =>
         product.name.toLowerCase().includes(query)
       );
+      console.log('After search filter:', filtered.length);
     }
 
     // Apply category filter
@@ -133,11 +143,14 @@ export default function Home() {
       filtered = filtered.filter(
         (product) => product.categoryId === selectedCategory
       );
+      console.log('After category filter:', filtered.length);
     }
 
     // Show trending products when no filters applied
     if (!searchQuery.trim() && selectedCategory === null) {
-      return getTrendingProducts(filtered, 12);
+      const trending = getTrendingProducts(12);
+      console.log('Trending products:', trending.length);
+      return trending;
     }
 
     return filtered.slice(0, 12);
@@ -441,11 +454,17 @@ export default function Home() {
                         e.target.value ? Number(e.target.value) : null
                       )
                     }
-                    className='px-4 py-2 rounded-full bg-white/90 backdrop-blur-sm border-0 focus:ring-2 focus:ring-white/50 focus:outline-none'
+                    className='px-4 py-2 rounded-full bg-white backdrop-blur-sm border border-gray-200 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:outline-none shadow-sm'
                   >
-                    <option value=''>Semua Kategori</option>
+                    <option value='' className='text-gray-700'>
+                      Semua Kategori
+                    </option>
                     {safeCategories.map((category) => (
-                      <option key={category.id} value={category.id}>
+                      <option
+                        key={category.id}
+                        value={category.id}
+                        className='text-gray-700'
+                      >
                         {category.name}
                       </option>
                     ))}

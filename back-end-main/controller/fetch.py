@@ -4,7 +4,20 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from db.util import *
 from flask import jsonify
 from recomm_system.main import recomend
-from review_summarization.main import lexrank_summarizer
+
+# Pastikan import statement sesuai dengan struktur folder
+try:
+    from review_summarization.main import lexrank_summarizer
+except ImportError as e:
+    print(f"Warning: Could not import lexrank_summarizer: {e}")
+    def lexrank_summarizer(reviews, num_sentences=3, threshold=0.1):
+        return "Summarization service not available"
+
+try:
+    import networkx as nx
+except ImportError:
+    print("Warning: networkx not installed. Some features may not work.")
+    nx = None
 
 def getAllProducts():
   try:

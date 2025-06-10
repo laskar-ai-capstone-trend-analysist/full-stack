@@ -16,7 +16,7 @@ export interface Product {
   reviewCount?: number;
 }
 
-// ✅ Tambahan interface untuk rekomendasi produk
+// ✅ Interface untuk rekomendasi produk
 export interface RecommendedProduct extends Product {
   similarity_score: number; // Score kesamaan dari AI model
 }
@@ -33,19 +33,20 @@ export interface Category {
   description?: string;
 }
 
+// ✅ Fix: Review interface sesuai dengan backend response
 export interface Review {
   id: number;
-  content: string;
+  review: string; // ✅ Backend menggunakan 'review' bukan 'content'
   rating: number;
-  createdAt: string;
+  tanggal: string; // ✅ Backend menggunakan 'tanggal' bukan 'createdAt'
   productId: number;
 }
 
 export interface SentimentData {
-  id: number;
-  sentiment: string;
-  confidence: number;
   productId: number;
+  sentiment_positive: number;
+  sentiment_negative: number;
+  sentiment_neutral: number;
 }
 
 // API Response interface sesuai dengan back-end format

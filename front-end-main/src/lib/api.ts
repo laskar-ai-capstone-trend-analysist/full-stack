@@ -139,72 +139,6 @@ const retryRequest = async (
   }
 };
 
-// Enhanced error handling
-class ApiError extends Error {
-  constructor(
-    message: string,
-    public status?: number,
-    public code?: string
-  ) {
-    super(message);
-    this.name = 'ApiError';
-  }
-}
-
-// Generic API request handler with better error handling
-async function apiRequest<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
-
-  try {
-    const response = await fetch(url, {
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      ...options,
-    });
-
-    if (!response.ok) {
-      throw new ApiError(
-        `HTTP error! status: ${response.status}`,
-        response.status,
-        'HTTP_ERROR'
-      );
-    }
-
-    const data = await response.json();
-
-    // Handle backend API response format
-    if (data && typeof data === 'object' && 'error' in data) {
-      if (data.error === true) {
-        throw new ApiError(
-          data.message || 'API Error',
-          response.status,
-          'API_ERROR'
-        );
-      }
-      return data.data as T;
-    }
-
-    return data as T;
-  } catch (error) {
-    if (error instanceof ApiError) {
-      throw error;
-    }
-
-    // Network or other errors
-    throw new ApiError(
-      error instanceof Error ? error.message : 'Unknown error occurred',
-      undefined,
-      'NETWORK_ERROR'
-    );
-  }
-}
-
 // Products API
 export const productsApi = {
   getAll: async (): Promise<Product[]> => {
@@ -269,12 +203,13 @@ export const productsApi = {
     }
   },
 
-  getByName: async (name: string): Promise<Product[]> => {
+  // ✅ Fix: Parameter name yang salah
+  search: async (query: string): Promise<Product[]> => {
     try {
       const response = await api.get<ApiResponse<Product[]>>(
         `/getAllProductsByName`,
         {
-          params: { name: query },
+          params: { name: query }, // ✅ Fix: gunakan 'name' bukan 'query'
         }
       );
       if (response.data.error) {
@@ -319,30 +254,52 @@ export const productsApi = {
     }
   },
 
-  // ✅ Tambahan method untuk rekomendasi produk
+  // ✅ Fix: Method untuk rekomendasi produk
   getRecommendations: async (
     productId: number
   ): Promise<RecommendedProduct[]> => {
     try {
+      console.log(`🔍 Fetching recommendations for product ${productId}`);
+
       const response = await api.get<ApiResponse<RecommendedProduct[]>>(
         `/getRecommendProducts`,
         {
           params: { product: productId.toString() },
+          timeout: 30000, // Extended timeout for AI processing
         }
       );
+
+      console.log('🔍 Recommendations API response:', response.data);
+
       if (response.data.error) {
         throw new Error(response.data.message);
       }
 
-      // ✅ Safe array handling
+      // ✅ Safe array handling dengan logging
       let recommendations = response.data.data;
-      if (!recommendations || !Array.isArray(recommendations)) {
+      if (!recommendations) {
+        console.warn('No recommendations data received');
         return [];
       }
 
+      if (!Array.isArray(recommendations)) {
+        console.warn('Recommendations data is not an array:', recommendations);
+        return [];
+      }
+
+      console.log(
+        `✅ Successfully fetched ${recommendations.length} recommendations`
+      );
       return recommendations;
     } catch (error) {
-      console.error('Error fetching product recommendations:', error);
+      console.error('❌ Error fetching product recommendations:', error);
+
+      // Enhanced error logging
+      if (error.response) {
+        console.error('Response status:', error.response.status);
+        console.error('Response data:', error.response.data);
+      }
+
       throw error;
     }
   },
@@ -444,15 +401,21 @@ export const reviewsApi = {
     }
   },
 
-  // ✅ Tambahan method untuk rangkuman review
+  // ✅ Method untuk rangkuman review
   getSummary: async (productId: number): Promise<ReviewSummary> => {
     try {
+      console.log(`🔍 Fetching review summary for product ${productId}`);
+
       const response = await api.get<ApiResponse<ReviewSummary>>(
         `/getReviewsSumOfProduct`,
         {
           params: { product: productId.toString() },
+          timeout: 30000, // Extended timeout for AI processing
         }
       );
+
+      console.log('🔍 Review summary API response:', response.data);
+
       if (response.data.error) {
         throw new Error(response.data.message);
       }
@@ -462,9 +425,17 @@ export const reviewsApi = {
         throw new Error('Review summary not found');
       }
 
+      console.log('✅ Successfully fetched review summary');
       return response.data.data;
     } catch (error) {
-      console.error('Error fetching review summary:', error);
+      console.error('❌ Error fetching review summary:', error);
+
+      // Enhanced error logging
+      if (error.response) {
+        console.error('Response status:', error.response.status);
+        console.error('Response data:', error.response.data);
+      }
+
       throw error;
     }
   },
@@ -511,17 +482,13 @@ export const healthApi = {
   },
 };
 
-// Utility function for health check
-export const healthCheck = (): Promise<{ status: string }> =>
-  apiRequest<{ status: string }>('/');
-
 // Export all APIs
-export const api = {
+export const apiClient = {
   products: productsApi,
   categories: categoriesApi,
   reviews: reviewsApi,
   sentiment: sentimentApi,
-  healthCheck,
+  health: healthApi,
 };
 
-export default api;
+export default apiClient;

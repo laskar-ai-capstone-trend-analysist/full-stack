@@ -176,18 +176,59 @@ def fetchAllReview():
 def fetchAllProductsByCategory():
     try:
         categoryId = request.args.get('category')
-        print(f"📦 Fetching products for category: {categoryId}")
-        response = getAllProductsByCategory(categoryId)
-        gc.collect()
-        print("✅ Products by category fetched successfully")
-        return response
+        print(f"🌐 API: Received request for category: {categoryId}")
+        
+        # Validation
+        if not categoryId:
+            return jsonify({
+                'error': True,
+                'message': 'Category parameter is required',
+                'data': []
+            }), 400
+        
+        try:
+            categoryId = int(categoryId)
+        except ValueError:
+            return jsonify({
+                'error': True,
+                'message': 'Category parameter must be a valid number',
+                'data': []
+            }), 400
+        
+        # Call controller function (returns dict)
+        print(f"🔄 API: Calling getAllProductsByCategory({categoryId})")
+        response_dict = getAllProductsByCategory(categoryId)
+        print(f"🔄 API: Controller returned type: {type(response_dict)}")
+        
+        # Validate controller response
+        if not isinstance(response_dict, dict):
+            print(f"❌ API: Invalid controller response type: {type(response_dict)}")
+            return jsonify({
+                'error': True,
+                'message': 'Internal server error: Invalid controller response',
+                'data': []
+            }), 500
+        
+        # Check if controller returned error
+        if response_dict.get('error', False):
+            print(f"❌ API: Controller error: {response_dict.get('message')}")
+            return jsonify(response_dict), 500
+        
+        # Success case
+        data_count = len(response_dict.get('data', []))
+        print(f"✅ API: Success with {data_count} products")
+        
+        # Return success with jsonify
+        return jsonify(response_dict), 200
+        
     except Exception as e:
-        print(f"❌ Error fetching products by category: {e}")
+        print(f"❌ API: Unexpected error in endpoint: {e}")
+        import traceback
         traceback.print_exc()
-        gc.collect()
+        
         return jsonify({
             'error': True,
-            'message': f'Error fetching products by category: {str(e)}',
+            'message': f'Internal server error: {str(e)}',
             'data': []
         }), 500
 
@@ -196,10 +237,32 @@ def fetchAllReviewsByProduct():
     try:
         productId = request.args.get('product')
         print(f"💬 Fetching reviews for product: {productId}")
-        response = getAllReviewsByProduct(productId)
+        
+        if not productId:
+            return jsonify({
+                'error': True,
+                'message': 'Product parameter is required',
+                'data': []
+            }), 400
+        
+        try:
+            productId = int(productId)
+        except ValueError:
+            return jsonify({
+                'error': True,
+                'message': 'Product parameter must be a valid number',
+                'data': []
+            }), 400
+        
+        response_data = getAllReviewsByProduct(productId)
         gc.collect()
         print("✅ Reviews by product fetched successfully")
-        return response
+        
+        if response_data.get('error'):
+            return jsonify(response_data), 500
+        else:
+            return jsonify(response_data), 200
+        
     except Exception as e:
         print(f"❌ Error fetching reviews by product: {e}")
         traceback.print_exc()
@@ -215,10 +278,32 @@ def fetchAllReviewsByCategory():
     try:
         categoryId = request.args.get('category')
         print(f"💬 Fetching reviews for category: {categoryId}")
-        response = getAllReviewsByCategory(categoryId)
+        
+        if not categoryId:
+            return jsonify({
+                'error': True,
+                'message': 'Category parameter is required',
+                'data': []
+            }), 400
+        
+        try:
+            categoryId = int(categoryId)
+        except ValueError:
+            return jsonify({
+                'error': True,
+                'message': 'Category parameter must be a valid number',
+                'data': []
+            }), 400
+        
+        response_data = getAllReviewsByCategory(categoryId)
         gc.collect()
         print("✅ Reviews by category fetched successfully")
-        return response
+        
+        if response_data.get('error'):
+            return jsonify(response_data), 500
+        else:
+            return jsonify(response_data), 200
+        
     except Exception as e:
         print(f"❌ Error fetching reviews by category: {e}")
         traceback.print_exc()
@@ -234,10 +319,32 @@ def fetchSentimentReviewsByProduct():
     try:
         productId = request.args.get('product')
         print(f"😊 Fetching sentiment for product: {productId}")
-        response = getSentimentPrediction(productId)
+        
+        if not productId:
+            return jsonify({
+                'error': True,
+                'message': 'Product parameter is required',
+                'data': []
+            }), 400
+        
+        try:
+            productId = int(productId)
+        except ValueError:
+            return jsonify({
+                'error': True,
+                'message': 'Product parameter must be a valid number',
+                'data': []
+            }), 400
+        
+        response_data = getSentimentPrediction(productId)
         gc.collect()
         print("✅ Sentiment analysis fetched successfully")
-        return response
+        
+        if response_data.get('error'):
+            return jsonify(response_data), 500
+        else:
+            return jsonify(response_data), 200
+        
     except Exception as e:
         print(f"❌ Error fetching sentiment: {e}")
         traceback.print_exc()
@@ -253,10 +360,30 @@ def fetchAllProductsByName():
     try:
         name = request.args.get('name')
         print(f"🔍 Searching products by name: {name}")
-        response = getProductsByName(name)
+        
+        if not name:
+            return jsonify({
+                'error': True,
+                'message': 'Name parameter is required',
+                'data': []
+            }), 400
+        
+        if len(name.strip()) < 2:
+            return jsonify({
+                'error': True,
+                'message': 'Name parameter must be at least 2 characters',
+                'data': []
+            }), 400
+        
+        response_data = getProductsByName(name)
         gc.collect()
         print("✅ Products search completed successfully")
-        return response
+        
+        if response_data.get('error'):
+            return jsonify(response_data), 500
+        else:
+            return jsonify(response_data), 200
+        
     except Exception as e:
         print(f"❌ Error searching products: {e}")
         traceback.print_exc()

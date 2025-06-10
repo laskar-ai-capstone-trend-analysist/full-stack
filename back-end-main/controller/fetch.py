@@ -83,83 +83,109 @@ def getAllReviews():
 
 def getAllProductsByCategory(categoryId):
     try:
+        print(f"🔍 Controller: Getting products for category {categoryId}")
+        from db.util import getProductsByCategory
         result = getProductsByCategory(categoryId)
-        return jsonify({
+        print(f"✅ DB result: Found {len(result) if result else 0} products")
+        
+        # Return plain dict - NO jsonify here
+        return {
             'error': False,
             'message': 'Products by category fetched successfully',
-            'data': result
-        }), 200
+            'data': result if result else []
+        }
+        
     except Exception as e:
-        print('Error fetching the data', e)
-        return jsonify({
+        print(f'❌ Controller error: {str(e)}')
+        import traceback
+        traceback.print_exc()
+        
+        # Return error dict - NO jsonify here
+        return {
             'error': True,
-            'message': 'Error fetching products by category',
-            'data': None
-        }), 500
+            'message': f'Error fetching products by category: {str(e)}',
+            'data': []
+        }
 
 def getAllReviewsByProduct(productId):
     try:
+        print(f"🔍 Controller: Getting reviews for product {productId}")
+        from db.util import getReviewsByProduct
         result = getReviewsByProduct(productId)
-        return jsonify({
+        print(f"✅ DB result: Found {len(result) if result else 0} reviews")
+        
+        return {
             'error': False,
             'message': 'Reviews by product fetched successfully',
-            'data': result
-        }), 200
+            'data': result if result else []
+        }
     except Exception as e:
-        print('Error fetching the data', e)
-        return jsonify({
+        print(f'❌ Controller error: {str(e)}')
+        return {
             'error': True,
-            'message': 'Error fetching reviews by product',
-            'data': None
-        }), 500
+            'message': f'Error fetching reviews by product: {str(e)}',
+            'data': []
+        }
 
 def getAllReviewsByCategory(categoryId):
     try:
+        print(f"🔍 Controller: Getting reviews for category {categoryId}")
+        from db.util import getReviewsByCategory
         result = getReviewsByCategory(categoryId)
-        return jsonify({
+        print(f"✅ DB result: Found {len(result) if result else 0} reviews")
+        
+        return {
             'error': False,
             'message': 'Reviews by category fetched successfully',
-            'data': result
-        }), 200
+            'data': result if result else []
+        }
     except Exception as e:
-        print('Error fetching the data', e)
-        return jsonify({
+        print(f'❌ Controller error: {str(e)}')
+        return {
             'error': True,
-            'message': 'Error fetching reviews by category',
-            'data': None
-        }), 500
+            'message': f'Error fetching reviews by category: {str(e)}',
+            'data': []
+        }
 
 def getSentimentPrediction(productId):
     try:
+        print(f"🔍 Controller: Getting sentiment for product {productId}")
+        from db.util import getSentimentByProduct
         result = getSentimentByProduct(productId)
-        return jsonify({
+        print(f"✅ DB result: Found {len(result) if result else 0} sentiment records")
+        
+        return {
             'error': False,
             'message': 'Sentiment analysis fetched successfully',
-            'data': result
-        }), 200
+            'data': result if result else []
+        }
     except Exception as e:
-        print('Error fetching the data', e)
-        return jsonify({
+        print(f'❌ Controller error: {str(e)}')
+        return {
             'error': True,
-            'message': 'Error fetching sentiment analysis',
-            'data': None
-        }), 500
+            'message': f'Error fetching sentiment analysis: {str(e)}',
+            'data': []
+        }
 
 def getProductsByName(name):
     try:
+        print(f"🔍 Controller: Searching products by name: {name}")
+        from db.util import getAllProductsByName
         result = getAllProductsByName(name.lower())
-        return jsonify({
+        print(f"✅ DB result: Found {len(result) if result else 0} products")
+        
+        return {
             'error': False,
             'message': 'Products by name fetched successfully',
-            'data': result
-        }), 200
+            'data': result if result else []
+        }
     except Exception as e:
-        print('Error fetching the data', e)
-        return jsonify({
+        print(f'❌ Controller error: {str(e)}')
+        return {
             'error': True,
-            'message': 'Error fetching products by name',
-            'data': None
-        }), 500
+            'message': f'Error fetching products by name: {str(e)}',
+            'data': []
+        }
 
 # ✅ Enhanced recommendation function with comprehensive error handling
 def recomend_products(productId):

@@ -14,65 +14,120 @@ import { errorLogger } from './errorLogger';
 import { performanceMonitor } from './performance';
 
 // API Configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 console.log('🔧 API_BASE_URL:', API_BASE_URL); // Debug log
 
 // Create axios instance with better configuration
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000, // Reduce timeout
+  timeout: 30000, // ✅ Increase timeout to 30 seconds
   headers: {
     'Content-Type': 'application/json',
-    Accept: 'application/json',
   },
-  // ✅ Add retry configuration
-  retry: 3,
-  retryDelay: 1000,
 });
 
-// Enhanced retry mechanism
-const retryRequest = async (fn, retries = 2) => {
+// ✅ Add retry functionality
+const retryRequest = async <T>(
+  fn: () => Promise<T>,
+  retries: number = 3
+): Promise<T> => {
   try {
     return await fn();
   } catch (error) {
-    if (
-      retries > 0 &&
-      (error.code === 'ECONNREFUSED' ||
-        error.code === 'NETWORK_ERROR' ||
-        error.message === 'Network Error' ||
-        error.response?.status >= 500)
-    ) {
-      console.log(`🔄 Retrying request... ${retries} attempts left`);
-      await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 seconds
+    if (retries > 0 && axios.isAxiosError(error)) {
+      console.log(`🔄 Retrying request, ${retries} attempts left...`);
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1 second
       return retryRequest(fn, retries - 1);
     }
     throw error;
   }
 };
 
-// Products API with better error handling
+// Request interceptor for logging
+api.interceptors.request.use(
+  (config) => {
+    console.log(
+      `🚀 API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`
+    );
+    if (config.params) {
+      console.log('📋 Request params:', config.params);
+    }
+    return config;
+  },
+  (error) => {
+    console.error('❌ Request error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Enhanced error interceptor
+api.interceptors.response.use(
+  (response) => {
+    console.log(`✅ API Response: ${response.status} ${response.config.url}`);
+    return response;
+  },
+  (error) => {
+    console.error('❌ Response error details:', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      url: error.config?.url,
+      baseURL: error.config?.baseURL,
+    });
+
+    // ✅ Better error messages
+    if (error.code === 'ECONNREFUSED') {
+      console.error('🔌 Connection refused - Backend server might be down');
+    } else if (error.code === 'ECONNABORTED') {
+      console.error('⏰ Request timeout - Server taking too long to respond');
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 export const productsApi = {
   getAll: async (): Promise<Product[]> => {
     return retryRequest(async () => {
       try {
-        console.log('📦 Fetching products...');
+        console.log('📦 Fetching all products...');
+
         const response =
           await api.get<ApiResponse<Product[]>>('/getAllProduct');
 
+        console.log('📦 Raw API response:', response.data);
+
         if (response.data.error) {
-          throw new Error(response.data.message);
+          throw new Error(response.data.message || 'Failed to fetch products');
         }
 
         let products = response.data.data;
         if (!products || !Array.isArray(products)) {
-          products = [];
+          console.warn('⚠️ Products data is not an array:', products);
+          return [];
         }
 
-        console.log(`✅ Fetched ${products.length} products`);
+        console.log(`✅ Successfully fetched ${products.length} products`);
         return products;
       } catch (error) {
-        console.error('❌ Error fetching products:', error);
+        console.error('❌ Error in getAll products:', error);
+
+        // ✅ Enhanced error logging
+        if (axios.isAxiosError(error)) {
+          if (error.response) {
+            console.error(
+              'Response error:',
+              error.response.status,
+              error.response.data
+            );
+          } else if (error.request) {
+            console.error('No response received:', error.request);
+          } else {
+            console.error('Request setup error:', error.message);
+          }
+        }
+
         throw error;
       }
     });
@@ -99,58 +154,75 @@ export const productsApi = {
     }
   },
 
-  // ✅ Fix: Parameter name yang salah
+  // Fix: Parameter name yang salah
   search: async (query: string): Promise<Product[]> => {
-    try {
-      const response = await api.get<ApiResponse<Product[]>>(
-        `/getAllProductsByName`,
-        {
-          params: { name: query }, // ✅ Fix: gunakan 'name' bukan 'query'
-        }
-      );
-      if (response.data.error) {
-        throw new Error(response.data.message);
-      }
+    return retryRequest(async () => {
+      try {
+        console.log(`🔍 Searching products with query: "${query}"`);
 
-      // ✅ Safe array handling
-      let products = response.data.data;
-      if (!products || !Array.isArray(products)) {
+        if (!query || query.trim().length < 2) {
+          console.log('⚠️ Query too short, returning empty array');
+          return [];
+        }
+
+        const cleanQuery = query.trim();
+        const response = await api.get(`/getAllProductsByName`, {
+          params: { name: cleanQuery },
+        });
+
+        if (response.data.error) {
+          console.error(`❌ Backend error: ${response.data.message}`);
+          throw new Error(response.data.message || 'Search failed');
+        }
+
+        const products = Array.isArray(response.data.data)
+          ? response.data.data
+          : [];
+        console.log(`✅ Found ${products.length} products for "${cleanQuery}"`);
+
+        return products;
+      } catch (error) {
+        console.error('❌ Search products failed:', error);
+        // ✅ Return empty array instead of throwing to prevent UI crash
         return [];
       }
-
-      return products;
-    } catch (error) {
-      console.error('Error searching products:', error);
-      throw error;
-    }
+    });
   },
 
   getByCategory: async (categoryId: number): Promise<Product[]> => {
-    try {
-      const response = await api.get<ApiResponse<Product[]>>(
-        `/getAllProductByCategory`,
-        {
-          params: { category: categoryId.toString() },
+    return retryRequest(async () => {
+      try {
+        console.log(`📦 Fetching products for category: ${categoryId}`);
+
+        const response = await api.get<ApiResponse<Product[]>>(
+          `/getAllProductByCategory`,
+          {
+            params: { category: categoryId.toString() },
+          }
+        );
+
+        if (response.data.error) {
+          throw new Error(
+            response.data.message || 'Failed to fetch products by category'
+          );
         }
-      );
-      if (response.data.error) {
-        throw new Error(response.data.message);
-      }
 
-      // ✅ Safe array handling
-      let products = response.data.data;
-      if (!products || !Array.isArray(products)) {
-        return [];
-      }
+        const products = Array.isArray(response.data.data)
+          ? response.data.data
+          : [];
+        console.log(
+          `✅ Found ${products.length} products for category ${categoryId}`
+        );
 
-      return products;
-    } catch (error) {
-      console.error('Error fetching products by category:', error);
-      throw error;
-    }
+        return products;
+      } catch (error) {
+        console.error('❌ Error fetching products by category:', error);
+        throw error;
+      }
+    });
   },
 
-  // ✅ Fix: Method untuk rekomendasi produk
+  // Fix: Method untuk rekomendasi produk
   getRecommendations: async (
     productId: number
   ): Promise<RecommendedProduct[]> => {
@@ -297,7 +369,7 @@ export const reviewsApi = {
     }
   },
 
-  // ✅ Method untuk rangkuman review
+  // Method untuk rangkuman review
   getSummary: async (productId: number): Promise<ReviewSummary> => {
     try {
       console.log(`🔍 Fetching review summary for product ${productId}`);

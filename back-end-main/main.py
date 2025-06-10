@@ -1,87 +1,389 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from flask_cors import CORS
-from controller.fetch import *
+import traceback
+import sys
+import os
+import gc  # Garbage collector
+
+# Add the project root to Python path
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+try:
+    from controller.fetch import *
+    print("✅ Controller imported successfully")
+except ImportError as e:
+    print(f"❌ Error importing controller: {e}")
+    traceback.print_exc()
 
 app = Flask(__name__)
 
-# ✅ Add CORS support
-CORS(app, origins=['http://localhost:3000', 'http://127.0.0.1:3000'])
+# ✅ Enhanced CORS support
+CORS(app, 
+     origins=['http://localhost:3000', 'http://127.0.0.1:3000'],
+     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+     allow_headers=['Content-Type', 'Authorization'])
+
+# ✅ Add error handler for all exceptions
+@app.errorhandler(Exception)
+def handle_exception(e):
+    print(f"❌ Unhandled exception: {e}")
+    traceback.print_exc()
+    
+    # Force garbage collection to free memory
+    gc.collect()
+    
+    return jsonify({
+        'error': True,
+        'message': f'Internal server error: {str(e)}',
+        'data': None
+    }), 500
+
+# ✅ Add memory monitoring
+def log_memory_usage():
+    import psutil
+    process = psutil.Process(os.getpid())
+    memory_mb = process.memory_info().rss / 1024 / 1024
+    print(f"📊 Memory usage: {memory_mb:.1f} MB")
+
+@app.before_request
+def before_request():
+    try:
+        # Log request info
+        print(f"📨 {request.method} {request.path}")
+        
+        # Check memory usage
+        import psutil
+        process = psutil.Process(os.getpid())
+        memory_mb = process.memory_info().rss / 1024 / 1024
+        
+        if memory_mb > 500:  # If memory > 500MB
+            print(f"⚠️ High memory usage: {memory_mb:.1f} MB - forcing garbage collection")
+            gc.collect()
+            
+    except Exception as e:
+        print(f"⚠️ Error in before_request: {e}")
+
+@app.after_request
+def after_request(response):
+    try:
+        print(f"✅ {request.method} {request.path} - {response.status_code}")
+        
+        # Force garbage collection after each request
+        gc.collect()
+        
+    except Exception as e:
+        print(f"⚠️ Error in after_request: {e}")
+    
+    return response
 
 @app.route('/')
 def hello():
-  return {
-    'error': False,
-    'message': 'YAPin API is running!',
-    'data': {
-      'status': 'healthy',
-      'version': '1.0.0'
-    }
-  }
+    try:
+        log_memory_usage()
+        return jsonify({
+            'error': False,
+            'message': 'YAPin API is running!',
+            'data': {
+                'status': 'healthy',
+                'version': '1.0.0',
+                'endpoints': [
+                    '/getAllProduct',
+                    '/getAllCategory', 
+                    '/getAllReview',
+                    '/getRecommendProducts',
+                    '/getReviewsSumOfProduct'
+                ]
+            }
+        })
+    except Exception as e:
+        print(f"❌ Error in hello endpoint: {e}")
+        traceback.print_exc()
+        return jsonify({
+            'error': True,
+            'message': str(e),
+            'data': None
+        }), 500
 
 @app.route('/getAllProduct', methods=['GET'])
 def fetchAllProduct():
-  response = getAllProducts()
-  return response
-
+    try:
+        print("📦 Fetching all products...")
+        log_memory_usage()
+        
+        response = getAllProducts()
+        
+        # Force cleanup after large data operations
+        gc.collect()
+        
+        print("✅ Products fetched successfully")
+        return response
+        
+    except MemoryError:
+        print("❌ Memory error in fetchAllProduct - forcing cleanup")
+        gc.collect()
+        return jsonify({
+            'error': True,
+            'message': 'Memory error - try again',
+            'data': []
+        }), 500
+    except Exception as e:
+        print(f"❌ Error fetching products: {e}")
+        traceback.print_exc()
+        gc.collect()
+        return jsonify({
+            'error': True,
+            'message': f'Error fetching products: {str(e)}',
+            'data': []
+        }), 500
 
 @app.route('/getAllCategory', methods=['GET'])
 def fetchAllCategory():
-  response = getAllCategories()
-  return response
+    try:
+        print("📂 Fetching all categories...")
+        response = getAllCategories()
+        gc.collect()
+        print("✅ Categories fetched successfully")
+        return response
+    except Exception as e:
+        print(f"❌ Error fetching categories: {e}")
+        traceback.print_exc()
+        gc.collect()
+        return jsonify({
+            'error': True,
+            'message': f'Error fetching categories: {str(e)}',
+            'data': []
+        }), 500
 
 @app.route('/getAllReview', methods=['GET'])
 def fetchAllReview():
-  response = getAllReviews()
-  return response
+    try:
+        print("💬 Fetching all reviews...")
+        response = getAllReviews()
+        gc.collect()
+        print("✅ Reviews fetched successfully")
+        return response
+    except Exception as e:
+        print(f"❌ Error fetching reviews: {e}")
+        traceback.print_exc()
+        gc.collect()
+        return jsonify({
+            'error': True,
+            'message': f'Error fetching reviews: {str(e)}',
+            'data': []
+        }), 500
 
 @app.route('/getAllProductByCategory', methods=['GET'])
 def fetchAllProductsByCategory():
-  categoryId = request.args.get('category')
-  response = getAllProductsByCategory(categoryId)
-  return response
+    try:
+        categoryId = request.args.get('category')
+        print(f"📦 Fetching products for category: {categoryId}")
+        response = getAllProductsByCategory(categoryId)
+        gc.collect()
+        print("✅ Products by category fetched successfully")
+        return response
+    except Exception as e:
+        print(f"❌ Error fetching products by category: {e}")
+        traceback.print_exc()
+        gc.collect()
+        return jsonify({
+            'error': True,
+            'message': f'Error fetching products by category: {str(e)}',
+            'data': []
+        }), 500
 
 @app.route('/getAllReviewByProduct', methods=['GET'])
 def fetchAllReviewsByProduct():
-  productId = request.args.get('product')
-  response = getAllReviewsByProduct(productId)
-  return response
+    try:
+        productId = request.args.get('product')
+        print(f"💬 Fetching reviews for product: {productId}")
+        response = getAllReviewsByProduct(productId)
+        gc.collect()
+        print("✅ Reviews by product fetched successfully")
+        return response
+    except Exception as e:
+        print(f"❌ Error fetching reviews by product: {e}")
+        traceback.print_exc()
+        gc.collect()
+        return jsonify({
+            'error': True,
+            'message': f'Error fetching reviews by product: {str(e)}',
+            'data': []
+        }), 500
 
 @app.route('/getAllReviewByCategory', methods=['GET'])
 def fetchAllReviewsByCategory():
-  categoryId = request.args.get('category')
-  response = getAllReviewsByCategory(categoryId)
-  return response
+    try:
+        categoryId = request.args.get('category')
+        print(f"💬 Fetching reviews for category: {categoryId}")
+        response = getAllReviewsByCategory(categoryId)
+        gc.collect()
+        print("✅ Reviews by category fetched successfully")
+        return response
+    except Exception as e:
+        print(f"❌ Error fetching reviews by category: {e}")
+        traceback.print_exc()
+        gc.collect()
+        return jsonify({
+            'error': True,
+            'message': f'Error fetching reviews by category: {str(e)}',
+            'data': []
+        }), 500
 
 @app.route('/getSentimentByProduct', methods=['GET'])
 def fetchSentimentReviewsByProduct():
-  productId = request.args.get('product')
-  response = getSentimentPrediction(productId)
-  return response
-
+    try:
+        productId = request.args.get('product')
+        print(f"😊 Fetching sentiment for product: {productId}")
+        response = getSentimentPrediction(productId)
+        gc.collect()
+        print("✅ Sentiment analysis fetched successfully")
+        return response
+    except Exception as e:
+        print(f"❌ Error fetching sentiment: {e}")
+        traceback.print_exc()
+        gc.collect()
+        return jsonify({
+            'error': True,
+            'message': f'Error fetching sentiment: {str(e)}',
+            'data': []
+        }), 500
 
 @app.route('/getAllProductsByName', methods=['GET'])
 def fetchAllProductsByName():
-  name = request.args.get('name')
-  response = getProductsByName(name)
-  return response
+    try:
+        name = request.args.get('name')
+        print(f"🔍 Searching products by name: {name}")
+        response = getProductsByName(name)
+        gc.collect()
+        print("✅ Products search completed successfully")
+        return response
+    except Exception as e:
+        print(f"❌ Error searching products: {e}")
+        traceback.print_exc()
+        gc.collect()
+        return jsonify({
+            'error': True,
+            'message': f'Error searching products: {str(e)}',
+            'data': []
+        }), 500
 
-# ✅ Fix: Endpoint untuk rekomendasi produk
+# ✅ Fix: Endpoint untuk rekomendasi produk dengan memory management
 @app.route('/getRecommendProducts', methods=['GET'])
 def fetchRecommendProductsByName():
-  productId = request.args.get('product')
-  print(f"🔍 API endpoint called for product: {productId}")
-  response = recomend_products(productId)
-  print(f"🔍 API response: {response}")
-  return response
+    try:
+        productId = request.args.get('product')
+        print(f"🎯 API endpoint called for product recommendations: {productId}")
+        log_memory_usage()
+        
+        response = recomend_products(productId)
+        
+        # Force cleanup after AI operations
+        gc.collect()
+        
+        print(f"✅ Recommendations API response ready")
+        return response
+        
+    except MemoryError:
+        print("❌ Memory error in recommendations - forcing cleanup")
+        gc.collect()
+        return jsonify({
+            'error': True,
+            'message': 'Memory error in recommendations - try again',
+            'data': []
+        }), 500
+    except Exception as e:
+        print(f"❌ Error in recommendations endpoint: {e}")
+        traceback.print_exc()
+        gc.collect()
+        return jsonify({
+            'error': True,
+            'message': f'Error fetching recommendations: {str(e)}',
+            'data': []
+        }), 500
 
-# ✅ Fix: Endpoint untuk rangkuman review
+# ✅ Fix: Endpoint untuk rangkuman review dengan memory management
 @app.route('/getReviewsSumOfProduct', methods=['GET'])
 def fetchReviewsSumOfProduct():
-  productId = request.args.get('product')
-  print(f"🔍 Review summary endpoint called for product: {productId}")
-  response = getReviewsSumByProduct(productId)
-  print(f"🔍 Review summary response: {response}")
-  return response
+    try:
+        productId = request.args.get('product')
+        print(f"📝 Review summary endpoint called for product: {productId}")
+        log_memory_usage()
+        
+        response = getReviewsSumByProduct(productId)
+        
+        # Force cleanup after AI operations
+        gc.collect()
+        
+        print(f"✅ Review summary response ready")
+        return response
+        
+    except MemoryError:
+        print("❌ Memory error in review summary - forcing cleanup")
+        gc.collect()
+        return jsonify({
+            'error': True,
+            'message': 'Memory error in review summary - try again',
+            'data': {
+                'productId': str(productId) if productId else 'unknown',
+                'summary': 'Memory error - coba lagi.'
+            }
+        }), 500
+    except Exception as e:
+        print(f"❌ Error in review summary endpoint: {e}")
+        traceback.print_exc()
+        gc.collect()
+        return jsonify({
+            'error': True,
+            'message': f'Error generating review summary: {str(e)}',
+            'data': {
+                'productId': str(productId) if productId else 'unknown',
+                'summary': 'Gagal membuat rangkuman review.'
+            }
+        }), 500
+
+# ✅ Add health check endpoint
+@app.route('/health', methods=['GET'])
+def health_check():
+    try:
+        log_memory_usage()
+        return jsonify({
+            'error': False,
+            'message': 'Backend is healthy',
+            'data': {
+                'status': 'ok',
+                'memory_usage': f"{psutil.Process(os.getpid()).memory_info().rss / 1024 / 1024:.1f} MB"
+            }
+        })
+    except Exception as e:
+        return jsonify({
+            'error': True,
+            'message': str(e),
+            'data': None
+        }), 500
 
 if __name__ == '__main__':
-  app.run(debug=True, host='0.0.0.0', port=5000)
+    print("🚀 Starting YAPin Backend Server...")
+    print("📡 CORS enabled for localhost:3000 and 127.0.0.1:3000")
+    print("🔗 API will be available at:")
+    print("   • http://127.0.0.1:5000")
+    print("   • http://localhost:5000")
+    
+    try:
+        # Install psutil if not available
+        try:
+            import psutil
+        except ImportError:
+            print("📦 Installing psutil for memory monitoring...")
+            os.system("pip install psutil")
+            import psutil
+        
+        app.run(
+            debug=False,  # ✅ Disable debug mode to prevent memory leaks
+            host='0.0.0.0', 
+            port=5000,
+            threaded=True,
+            use_reloader=False  # ✅ Prevent double imports
+        )
+    except Exception as e:
+        print(f"❌ Failed to start server: {e}")
+        traceback.print_exc()

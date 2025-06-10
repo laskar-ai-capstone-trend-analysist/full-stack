@@ -1,49 +1,24 @@
 'use client';
 
-import React, {
-  useState,
-  useMemo,
-  useEffect,
-  useCallback,
-  Suspense,
-  lazy,
-} from 'react';
+import React, { useEffect, useState, useCallback, useMemo, lazy } from 'react';
+import { Product, RecommendedProduct } from '@/lib/types';
 import { useProducts } from '@/hooks/useProducts';
 import { useCategories } from '@/hooks/useCategories';
-import { Product } from '@/lib/types';
-import ProductGrid from '@/components/product/ProductGrid';
-import SearchInput from '@/components/ui/SearchInput';
-import CategoryFilter from '@/components/ui/CategoryFilter';
-import StatsCards from '@/components/ui/StatsCards';
-import FeatureCards from '@/components/ui/FeatureCards';
 import {
-  AlertCircle,
-  RefreshCw,
-  TrendingUp,
-  Sparkles,
-  Star,
-  Filter,
   Search,
-  Mail,
-  Phone,
-  MapPin,
-  Github,
-  Twitter,
-  Linkedin,
-  Instagram,
-  Heart,
-  ExternalLink,
-  ChevronUp,
-  Zap,
+  Filter,
+  RefreshCw,
+  ChevronDown,
+  TrendingUp,
+  ShoppingBag,
+  Star,
   Users,
-  Award,
-  Clock,
+  BarChart3,
+  Wifi,
   WifiOff,
-  AlertTriangle,
-  Brain,
-  Lightbulb,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import ProductRecommendations from '@/components/product/ProductRecommendations';
 
 // Lazy load heavy components for better performance
 const ProductModal = lazy(() => import('@/components/product/ProductModal'));
@@ -52,11 +27,11 @@ const ProductModal = lazy(() => import('@/components/product/ProductModal'));
 class ErrorBoundary extends React.Component {
   constructor(props: any) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false };
   }
 
   static getDerivedStateFromError(error: any) {
-    return { hasError: true, error };
+    return { hasError: true };
   }
 
   componentDidCatch(error: any, errorInfo: any) {
@@ -64,24 +39,21 @@ class ErrorBoundary extends React.Component {
   }
 
   render() {
-    const state = this.state as any;
-    if (state.hasError) {
+    if ((this.state as any).hasError) {
       return (
-        <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center px-4'>
-          <div className='text-center p-8 bg-white rounded-2xl shadow-xl max-w-md mx-auto'>
-            <AlertTriangle className='w-16 h-16 text-red-500 mx-auto mb-4' />
-            <h2 className='text-2xl font-bold text-gray-900 mb-2'>
-              Oops! Terjadi Kesalahan
+        <div className='min-h-screen flex items-center justify-center'>
+          <div className='text-center'>
+            <h2 className='text-xl font-semibold text-gray-900 mb-2'>
+              Oops! Terjadi kesalahan
             </h2>
-            <p className='text-gray-600 mb-6'>
-              Maaf, aplikasi mengalami masalah teknis. Tim kami sudah diberitahu
-              dan sedang memperbaikinya.
+            <p className='text-gray-600 mb-4'>
+              Silakan refresh halaman untuk mencoba lagi.
             </p>
             <button
               onClick={() => window.location.reload()}
-              className='px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors'
+              className='px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700'
             >
-              Muat Ulang Halaman
+              Refresh Halaman
             </button>
           </div>
         </div>
@@ -122,6 +94,12 @@ export default function Home() {
   const [retryCount, setRetryCount] = useState(0);
   const [isOnline, setIsOnline] = useState(true);
 
+  // ✅ State untuk rekomendasi di homepage
+  const [showRecommendations, setShowRecommendations] = useState(false);
+  const [recommendationProductId, setRecommendationProductId] = useState<
+    number | null
+  >(null);
+
   const loading = productsLoading || categoriesLoading;
   const error = productsError || categoriesError;
 
@@ -138,10 +116,31 @@ export default function Home() {
 
   // Memoized display products with performance optimization
   const displayProducts = useMemo(() => {
-    if (searchQuery || selectedCategory !== null) {
-      return safeProducts;
+    if (!Array.isArray(safeProducts)) return [];
+
+    let filtered = [...safeProducts];
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((product) =>
+        product.name.toLowerCase().includes(query)
+      );
     }
-    return getTrendingProducts(8);
+
+    // Apply category filter
+    if (selectedCategory !== null) {
+      filtered = filtered.filter(
+        (product) => product.categoryId === selectedCategory
+      );
+    }
+
+    // Show trending products when no filters applied
+    if (!searchQuery.trim() && selectedCategory === null) {
+      return getTrendingProducts(filtered, 12);
+    }
+
+    return filtered.slice(0, 12);
   }, [safeProducts, searchQuery, selectedCategory, getTrendingProducts]);
 
   // Optimized handlers with useCallback
@@ -154,7 +153,6 @@ export default function Home() {
         } else {
           await refetchProducts();
         }
-        setRetryCount(0);
       } catch (error) {
         console.error('Search error:', error);
       }
@@ -166,13 +164,11 @@ export default function Home() {
     async (categoryId: number | null) => {
       try {
         setSelectedCategory(categoryId);
-        if (categoryId === null) {
-          setSearchQuery('');
-          await refetchProducts();
-        } else {
+        if (categoryId !== null) {
           await filterByCategory(categoryId);
+        } else {
+          await refetchProducts();
         }
-        setRetryCount(0);
       } catch (error) {
         console.error('Filter error:', error);
       }
@@ -186,9 +182,40 @@ export default function Home() {
   }, []);
 
   const handleCloseModal = useCallback(() => {
-    setIsModalOpen(false);
     setSelectedProduct(null);
+    setIsModalOpen(false);
   }, []);
+
+  // ✅ Handle modal product selection from recommendations
+  const handleModalProductSelect = useCallback(
+    (recommendedProduct: RecommendedProduct) => {
+      // Convert RecommendedProduct to Product
+      const product: Product = {
+        id: recommendedProduct.id,
+        name: recommendedProduct.name,
+        currentPrice: recommendedProduct.currentPrice,
+        originalPrice: recommendedProduct.originalPrice,
+        imgUrl: recommendedProduct.imgUrl,
+        stock: recommendedProduct.stock,
+        categoryId: recommendedProduct.categoryId,
+        discount: recommendedProduct.discount,
+      };
+      setSelectedProduct(product);
+      // Modal tetap terbuka untuk produk yang baru dipilih
+    },
+    []
+  );
+
+  // ✅ Handle product click to show recommendations
+  const handleProductClick = useCallback(
+    (product: Product) => {
+      handleViewDetails(product);
+      // Set untuk menampilkan rekomendasi di homepage juga
+      setRecommendationProductId(product.id);
+      setShowRecommendations(true);
+    },
+    [handleViewDetails]
+  );
 
   const handleRetry = useCallback(async () => {
     if (retryCount < 3) {
@@ -221,89 +248,84 @@ export default function Home() {
 
   // Optimized scroll handler with throttling
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+    let ticking = false;
 
     const handleScroll = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        setShowScrollTop(window.scrollY > 500);
-      }, 100);
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const scrolled = window.scrollY > 300;
+          setShowScrollTop(scrolled);
+
+          const statsElement = document.getElementById('stats-section');
+          if (statsElement) {
+            const rect = statsElement.getBoundingClientRect();
+            const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
+            setIsStatsVisible(isVisible);
+          }
+
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      clearTimeout(timeoutId);
-    };
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   // Optimized resize handler
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-
     const handleResize = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        const width = window.innerWidth;
-        if (width < 768) setScreenSize('mobile');
-        else if (width < 1024) setScreenSize('tablet');
-        else setScreenSize('desktop');
-      }, 150);
+      const width = window.innerWidth;
+      if (width < 768) {
+        setScreenSize('mobile');
+      } else if (width < 1024) {
+        setScreenSize('tablet');
+      } else {
+        setScreenSize('desktop');
+      }
     };
 
-    handleResize();
+    handleResize(); // Initial check
     window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      clearTimeout(timeoutId);
-    };
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Enhanced error state with offline detection
-  if (error && !loading) {
+  // Clear recommendations when search or category changes
+  useEffect(() => {
+    if (searchQuery || selectedCategory !== null) {
+      setShowRecommendations(false);
+      setRecommendationProductId(null);
+    }
+  }, [searchQuery, selectedCategory]);
+
+  // Show error state
+  if (error && safeProducts.length === 0) {
     return (
-      <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center px-4'>
-        <div className='text-center p-8 bg-white rounded-2xl shadow-xl max-w-md mx-auto'>
-          {!isOnline ? (
-            <>
-              <WifiOff className='w-16 h-16 text-gray-500 mx-auto mb-4' />
-              <h2 className='text-2xl font-bold text-gray-900 mb-2'>
-                Tidak Ada Koneksi Internet
-              </h2>
-              <p className='text-gray-600 mb-6'>
-                Periksa koneksi internet Anda dan coba lagi.
-              </p>
-            </>
-          ) : (
-            <>
-              <AlertCircle className='w-16 h-16 text-red-500 mx-auto mb-4' />
-              <h2 className='text-2xl font-bold text-gray-900 mb-2'>
-                Gagal Memuat Data
-              </h2>
-              <p className='text-gray-600 mb-6'>
-                {retryCount > 0
-                  ? `Percobaan ke-${retryCount + 1} dari 3...`
-                  : 'Terjadi kesalahan saat memuat data produk.'}
-              </p>
-            </>
-          )}
+      <div className='min-h-screen flex items-center justify-center bg-gray-50'>
+        <div className='max-w-md mx-auto text-center'>
+          <div className='mb-6'>
+            <div className='w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4'>
+              <WifiOff className='w-10 h-10 text-red-500' />
+            </div>
+            <h2 className='text-2xl font-bold text-gray-900 mb-2'>
+              Gagal Memuat Data
+            </h2>
+            <p className='text-gray-600 mb-6'>{error}</p>
+          </div>
 
           <div className='flex flex-col sm:flex-row gap-3 justify-center'>
             <button
               onClick={handleRetry}
-              disabled={retryCount >= 3 || loading}
+              disabled={retryCount >= 3}
               className={cn(
-                'flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200',
-                retryCount >= 3 || loading
+                'flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors',
+                retryCount >= 3
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
               )}
             >
-              {loading ? (
-                <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />
-              ) : (
-                <RefreshCw className='w-4 h-4' />
-              )}
+              {retryCount < 3 && <RefreshCw className='w-4 h-4' />}
               {retryCount >= 3 ? 'Batas Percobaan Tercapai' : 'Coba Lagi'}
             </button>
 
@@ -328,343 +350,307 @@ export default function Home() {
   // Enhanced loading state with skeleton
   if (loading && safeProducts.length === 0) {
     return (
-      <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100'>
+      <div className='min-h-screen bg-gray-50'>
         {/* Loading Hero Section */}
-        <section className='py-12 sm:py-16 lg:py-24 px-4'>
-          <div className='max-w-6xl mx-auto text-center'>
-            <div className='w-16 h-16 sm:w-20 sm:h-20 mx-auto bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl animate-pulse mb-6'>
-              <Brain className='w-8 h-8 sm:w-10 sm:h-10 text-white' />
-            </div>
-
-            <div className='mb-4 sm:mb-6'>
-              <div className='flex justify-center space-x-2'>
-                <div className='w-2 h-2 sm:w-3 sm:h-3 bg-blue-600 rounded-full animate-bounce'></div>
-                <div className='w-2 h-2 sm:w-3 sm:h-3 bg-purple-600 rounded-full animate-bounce delay-100'></div>
-                <div className='w-2 h-2 sm:w-3 sm:h-3 bg-pink-600 rounded-full animate-bounce delay-200'></div>
-              </div>
-            </div>
-
-            <h2 className='text-xl sm:text-2xl font-bold text-gray-900 mb-2'>
-              Memuat Data Terbaru
-            </h2>
-            <p className='text-sm sm:text-base text-gray-600 mb-4 sm:mb-6'>
-              AI sedang menganalisis ribuan produk dari marketplace...
-            </p>
-          </div>
-        </section>
-
-        {/* Loading Skeleton */}
-        <section className='py-8 sm:py-12 px-4'>
-          <div className='max-w-6xl mx-auto'>
-            {/* Stats Skeleton */}
-            <div className='grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8'>
-              {[...Array(4)].map((_, i) => (
-                <div
-                  key={i}
-                  className='bg-white rounded-xl sm:rounded-2xl p-3 sm:p-6 shadow-soft'
-                >
-                  <div className='flex flex-col sm:flex-row items-center sm:gap-4 text-center sm:text-left'>
-                    <div className='w-8 h-8 sm:w-12 sm:h-12 bg-gray-200 rounded-lg sm:rounded-xl mb-2 sm:mb-0 animate-pulse'></div>
-                    <div className='flex-1 space-y-2'>
-                      <div className='h-4 sm:h-6 bg-gray-200 rounded animate-pulse'></div>
-                      <div className='h-3 bg-gray-200 rounded animate-pulse'></div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Search Skeleton */}
-            <div className='bg-white rounded-2xl shadow-xl border border-gray-100 p-6 mb-8'>
-              <div className='flex flex-col lg:flex-row gap-6'>
-                <div className='flex-1 space-y-2'>
-                  <div className='h-4 bg-gray-200 rounded animate-pulse w-32'></div>
-                  <div className='h-12 bg-gray-200 rounded-lg animate-pulse'></div>
-                </div>
-                <div className='lg:w-80 space-y-2'>
-                  <div className='h-4 bg-gray-200 rounded animate-pulse w-24'></div>
-                  <div className='h-12 bg-gray-200 rounded-lg animate-pulse'></div>
-                </div>
-              </div>
-            </div>
-
-            {/* Products Grid Skeleton */}
-            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6'>
-              {[...Array(8)].map((_, i) => (
-                <div
-                  key={i}
-                  className='bg-white rounded-xl shadow-soft p-4 space-y-3'
-                >
-                  <div className='h-48 bg-gray-200 rounded-lg animate-pulse'></div>
-                  <div className='space-y-2'>
-                    <div className='h-4 bg-gray-200 rounded animate-pulse'></div>
-                    <div className='h-4 bg-gray-200 rounded animate-pulse w-3/4'></div>
-                    <div className='h-6 bg-gray-200 rounded animate-pulse w-1/2'></div>
-                  </div>
-                </div>
-              ))}
+        <div className='bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600'>
+          <div className='container mx-auto px-4 py-16'>
+            <div className='text-center'>
+              <div className='w-32 h-8 bg-white/20 rounded mx-auto mb-4 animate-pulse'></div>
+              <div className='w-96 h-6 bg-white/10 rounded mx-auto mb-8 animate-pulse'></div>
+              <div className='w-80 h-12 bg-white/20 rounded mx-auto animate-pulse'></div>
             </div>
           </div>
-        </section>
+        </div>
+
+        {/* Loading Product Grid */}
+        <div className='container mx-auto px-4 py-8'>
+          <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
+            {[...Array(8)].map((_, i) => (
+              <div
+                key={i}
+                className='bg-white rounded-lg border border-gray-200 overflow-hidden animate-pulse'
+              >
+                <div className='aspect-square bg-gray-200'></div>
+                <div className='p-4 space-y-3'>
+                  <div className='h-4 bg-gray-200 rounded w-3/4'></div>
+                  <div className='h-4 bg-gray-200 rounded w-1/2'></div>
+                  <div className='h-6 bg-gray-200 rounded w-2/3'></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <ErrorBoundary>
-      <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative'>
-        {/* Offline Indicator */}
+      <div className='min-h-screen bg-gray-50'>
+        {/* Online/Offline Indicator */}
         {!isOnline && (
-          <div className='fixed top-0 left-0 right-0 bg-red-600 text-white text-center py-2 text-sm z-50'>
+          <div className='bg-red-500 text-white text-center py-2 text-sm'>
             <WifiOff className='w-4 h-4 inline mr-2' />
-            Tidak ada koneksi internet. Beberapa fitur mungkin tidak tersedia.
+            Anda sedang offline. Beberapa fitur mungkin tidak tersedia.
           </div>
         )}
 
-        <main>
-          {/* Hero Section */}
-          <section className='relative py-12 sm:py-16 lg:py-24 px-4 overflow-hidden'>
-            <div className='max-w-6xl mx-auto text-center relative z-10'>
-              <div className='inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-full text-sm font-medium mb-6'>
-                <Brain className='w-4 h-4' />
-                AI-Powered Product Discovery
-                <Lightbulb className='w-4 h-4' />
-              </div>
+        {/* Hero Section with Enhanced Design */}
+        <div className='bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 relative overflow-hidden'>
+          {/* Background Pattern */}
+          <div className='absolute inset-0 bg-white/5'>
+            <div
+              className='absolute inset-0'
+              style={{
+                backgroundImage:
+                  'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)',
+                backgroundSize: '20px 20px',
+              }}
+            ></div>
+          </div>
 
-              <h1 className='text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 mb-6'>
-                <span className='block'>YAPin</span>
-                <span className='text-2xl md:text-3xl font-medium text-gray-600 block mt-2'>
-                  Yuk AI Pickin
-                </span>
+          <div className='container mx-auto px-4 py-16 relative z-10'>
+            <div className='text-center max-w-4xl mx-auto'>
+              <h1 className='text-4xl md:text-6xl font-bold text-white mb-6 leading-tight'>
+                YAPin - Yuk AI Pickin 🤖
               </h1>
-
-              <p className='text-xl text-gray-700 max-w-3xl mx-auto mb-8 leading-relaxed'>
-                Biarkan <span className='text-blue-600 font-bold'>AI</span>{' '}
-                membantu Anda menemukan produk-produk{' '}
-                <span className='text-purple-600 font-bold'>terbaik</span>{' '}
-                dengan analisis sentiment dan rating{' '}
-                <span className='inline-flex items-center gap-1 text-yellow-500'>
-                  <Star className='w-5 h-5 fill-current' />
-                  tertinggi
-                </span>
-              </p>
-
-              <button className='px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-2xl shadow-2xl hover:shadow-blue-500/25 transform hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2 mx-auto'>
-                <Brain className='w-5 h-5' />
-                Mulai AI Picking
-              </button>
-            </div>
-          </section>
-
-          {/* Stats Section */}
-          <section className='py-12 px-4'>
-            <div className='max-w-6xl mx-auto'>
-              <StatsCards
-                totalProducts={safeProducts.length}
-                totalCategories={safeCategories.length}
-              />
-            </div>
-          </section>
-
-          {/* Search and Filter Section */}
-          <section className='py-12 px-4 bg-white/50 backdrop-blur-sm'>
-            <div className='max-w-6xl mx-auto'>
-              <div className='text-center mb-8'>
-                <div className='inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-2 rounded-full text-sm font-medium mb-4'>
-                  <Brain className='w-4 h-4' />
-                  AI Smart Search
-                  <Lightbulb className='w-4 h-4' />
-                </div>
-                <h2 className='text-3xl font-bold text-gray-900 mb-4'>
-                  Temukan Produk Impian Anda
-                </h2>
-                <p className='text-gray-600 max-w-2xl mx-auto'>
-                  Gunakan AI-powered search dan filter cerdas untuk menemukan
-                  produk yang perfect untuk Anda
-                </p>
-              </div>
-
-              <div className='bg-white rounded-2xl shadow-xl border border-gray-100 p-6 mb-8'>
-                <div className='flex flex-col lg:flex-row gap-6'>
-                  <div className='flex-1'>
-                    <label className='block text-sm font-semibold text-gray-700 mb-2'>
-                      🤖 AI Smart Search
-                    </label>
-                    <SearchInput
-                      onSearch={handleSearch}
-                      placeholder='Ceritakan produk yang Anda cari...'
-                      loading={loading}
-                    />
-                  </div>
-                  <div className='lg:w-80'>
-                    <label className='block text-sm font-semibold text-gray-700 mb-2'>
-                      📂 Filter Kategori
-                    </label>
-                    <CategoryFilter
-                      categories={safeCategories}
-                      onCategoryChange={handleCategoryFilter}
-                      loading={loading}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <ProductGrid
-                products={displayProducts}
-                loading={loading}
-                error={error}
-                onProductClick={handleViewDetails}
-                showTrendingBadge={!searchQuery && selectedCategory === null}
-              />
-            </div>
-          </section>
-
-          {/* Features Section */}
-          <section className='py-16 px-4 bg-white'>
-            <div className='max-w-6xl mx-auto'>
-              <div className='text-center mb-12'>
-                <div className='inline-flex items-center gap-2 bg-gradient-to-r from-green-600 to-teal-600 text-white px-4 py-2 rounded-full text-sm font-medium mb-4'>
-                  <Zap className='w-4 h-4' />
-                  Fitur AI Canggih
-                </div>
-                <h2 className='text-3xl font-bold text-gray-900 mb-4'>
-                  Kenapa Pilih YAPin?
-                </h2>
-                <p className='text-lg text-gray-600'>
-                  Platform AI-powered pertama untuk product discovery yang
-                  cerdas
-                </p>
-              </div>
-              <FeatureCards />
-            </div>
-          </section>
-
-          {/* Footer */}
-          <footer className='bg-gray-900 text-white py-12'>
-            <div className='max-w-6xl mx-auto px-4 text-center'>
-              <div className='flex items-center justify-center gap-3 mb-4'>
-                <div className='w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center'>
-                  <Brain className='w-6 h-6 text-white' />
-                </div>
-                <div>
-                  <h3 className='text-2xl font-bold'>YAPin</h3>
-                  <p className='text-sm text-gray-400'>Yuk AI Pickin</p>
-                </div>
-              </div>
-
-              <p className='text-gray-300 mb-6'>
+              <p className='text-xl md:text-2xl text-white/90 mb-8 leading-relaxed'>
                 Platform AI-powered untuk product discovery yang cerdas dan
                 personal
               </p>
 
-              {/* Team Section */}
-              <div className='mb-8'>
-                <h4 className='text-lg font-semibold text-gray-300 mb-4'>
-                  Tim Laskar AI
-                </h4>
-                <div className='flex flex-wrap justify-center gap-4'>
-                  <a
-                    href='https://github.com/ajusdwimantara'
-                    target='_blank'
-                    rel='noopener noreferrer'
-                    className='flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-lg transition-colors'
-                  >
-                    <Github className='w-4 h-4' />
-                    <span className='text-sm'>ajusdwimantara</span>
-                  </a>
+              {/* Enhanced Search Bar */}
+              <div className='max-w-2xl mx-auto mb-8'>
+                <div className='relative'>
+                  <input
+                    type='text'
+                    placeholder='Ceritakan produk yang Anda cari...'
+                    value={searchQuery}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    className='w-full px-6 py-4 pr-14 text-lg rounded-full border-0 shadow-lg focus:ring-4 focus:ring-white/20 focus:outline-none transition-all'
+                  />
+                  <Search className='absolute right-5 top-1/2 transform -translate-y-1/2 w-6 h-6 text-gray-400' />
+                </div>
 
-                  <a
-                    href='https://github.com/fluffybhe'
-                    target='_blank'
-                    rel='noopener noreferrer'
-                    className='flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-lg transition-colors'
+                {/* Category Filter */}
+                <div className='mt-4 flex justify-center'>
+                  <select
+                    value={selectedCategory || ''}
+                    onChange={(e) =>
+                      handleCategoryFilter(
+                        e.target.value ? Number(e.target.value) : null
+                      )
+                    }
+                    className='px-4 py-2 rounded-full bg-white/90 backdrop-blur-sm border-0 focus:ring-2 focus:ring-white/50 focus:outline-none'
                   >
-                    <Github className='w-4 h-4' />
-                    <span className='text-sm'>fluffybhe</span>
-                  </a>
-
-                  <a
-                    href='https://github.com/jeremiasibarani'
-                    target='_blank'
-                    rel='noopener noreferrer'
-                    className='flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-lg transition-colors'
-                  >
-                    <Github className='w-4 h-4' />
-                    <span className='text-sm'>jeremiasibarani</span>
-                  </a>
-
-                  <a
-                    href='https://github.com/ramaanindyaa'
-                    target='_blank'
-                    rel='noopener noreferrer'
-                    className='flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded-lg transition-colors'
-                  >
-                    <Github className='w-4 h-4' />
-                    <span className='text-sm'>ramaanindyaa</span>
-                  </a>
+                    <option value=''>Semua Kategori</option>
+                    {safeCategories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
-              {/* Social Links */}
-              <div className='flex justify-center space-x-6 mb-8'>
-                <a
-                  href='https://github.com/laskar-ai-capstone-trend-analysist'
-                  target='_blank'
-                  rel='noopener noreferrer'
-                  className='text-gray-400 hover:text-white transition-colors'
-                >
-                  <Github className='w-6 h-6' />
-                </a>
-                <Twitter className='w-6 h-6 text-gray-400 hover:text-white cursor-pointer transition-colors' />
-                <Linkedin className='w-6 h-6 text-gray-400 hover:text-white cursor-pointer transition-colors' />
-                <Instagram className='w-6 h-6 text-gray-400 hover:text-white cursor-pointer transition-colors' />
-              </div>
-
-              <div className='pt-8 border-t border-gray-700'>
-                <p className='text-gray-400 text-sm'>
-                  © 2025 YAPin - Yuk AI Pickin. Made with{' '}
-                  <Heart className='w-4 h-4 inline text-red-500' /> and Laskar
-                  AI in Indonesia
-                </p>
+              {/* Stats Section */}
+              <div
+                id='stats-section'
+                className={cn(
+                  'grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto transition-all duration-1000',
+                  isStatsVisible
+                    ? 'opacity-100 translate-y-0'
+                    : 'opacity-70 translate-y-4'
+                )}
+              >
+                <div className='bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center'>
+                  <ShoppingBag className='w-8 h-8 text-white mx-auto mb-2' />
+                  <div className='text-2xl font-bold text-white'>
+                    {safeProducts.length.toLocaleString()}
+                  </div>
+                  <div className='text-white/80'>Produk Tersedia</div>
+                </div>
+                <div className='bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center'>
+                  <Users className='w-8 h-8 text-white mx-auto mb-2' />
+                  <div className='text-2xl font-bold text-white'>10K+</div>
+                  <div className='text-white/80'>Review Pelanggan</div>
+                </div>
+                <div className='bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center'>
+                  <BarChart3 className='w-8 h-8 text-white mx-auto mb-2' />
+                  <div className='text-2xl font-bold text-white'>
+                    {safeCategories.length}
+                  </div>
+                  <div className='text-white/80'>Kategori Produk</div>
+                </div>
               </div>
             </div>
-          </footer>
-        </main>
+          </div>
+        </div>
 
-        {/* Enhanced Floating Action Buttons */}
-        <div className='fixed bottom-6 right-6 z-50 space-y-3'>
-          {showScrollTop && (
+        {/* Products Section */}
+        <div className='container mx-auto px-4 py-12'>
+          {/* Section Header */}
+          <div className='flex items-center justify-between mb-8'>
+            <div>
+              <h2 className='text-2xl font-bold text-gray-900 mb-2'>
+                {searchQuery
+                  ? `Hasil Pencarian: "${searchQuery}"`
+                  : selectedCategory
+                    ? 'Produk Berdasarkan Kategori'
+                    : 'Produk Trending'}
+              </h2>
+              <p className='text-gray-600'>
+                Menampilkan {displayProducts.length} dari {safeProducts.length}{' '}
+                produk
+              </p>
+            </div>
+
             <button
-              onClick={handleScrollToTop}
-              className='w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group'
-              title='Kembali ke atas'
+              onClick={refetchProducts}
+              className='flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors'
             >
-              <ChevronUp className='w-5 h-5' />
+              <RefreshCw className='w-4 h-4' />
+              Refresh
             </button>
+          </div>
+
+          {/* Products Grid */}
+          {displayProducts.length > 0 ? (
+            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12'>
+              {displayProducts.map((product) => (
+                <div
+                  key={product.id}
+                  className='bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-200 cursor-pointer group'
+                  onClick={() => handleProductClick(product)}
+                >
+                  {/* Product Image */}
+                  <div className='relative aspect-square'>
+                    <img
+                      src={product.imgUrl}
+                      alt={product.name}
+                      className='w-full h-full object-cover group-hover:scale-105 transition-transform duration-200'
+                      loading='lazy'
+                    />
+                    {product.discount > 0 && (
+                      <div className='absolute top-2 left-2'>
+                        <span className='bg-red-500 text-white text-xs px-2 py-1 rounded-full font-medium'>
+                          -{product.discount}%
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Product Info */}
+                  <div className='p-4'>
+                    <h3 className='font-medium text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors'>
+                      {product.name}
+                    </h3>
+
+                    <div className='flex items-center gap-1 mb-2'>
+                      <Star className='w-4 h-4 fill-yellow-400 text-yellow-400' />
+                      <span className='text-sm text-gray-600'>4.5</span>
+                      <span className='text-xs text-gray-400'>(123)</span>
+                    </div>
+
+                    <div className='space-y-1'>
+                      <div className='flex items-center gap-2'>
+                        <span className='text-lg font-semibold text-gray-900'>
+                          {new Intl.NumberFormat('id-ID', {
+                            style: 'currency',
+                            currency: 'IDR',
+                            minimumFractionDigits: 0,
+                          }).format(product.currentPrice)}
+                        </span>
+                        {product.discount > 0 && (
+                          <span className='text-sm text-gray-500 line-through'>
+                            {new Intl.NumberFormat('id-ID', {
+                              style: 'currency',
+                              currency: 'IDR',
+                              minimumFractionDigits: 0,
+                            }).format(product.originalPrice)}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className='flex items-center justify-between'>
+                        <span
+                          className={cn(
+                            'text-xs px-2 py-1 rounded-full',
+                            product.stock > 0
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-red-100 text-red-700'
+                          )}
+                        >
+                          {product.stock > 0
+                            ? `Stok: ${product.stock}`
+                            : 'Habis'}
+                        </span>
+                        <TrendingUp className='w-4 h-4 text-gray-400' />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className='text-center py-12'>
+              <div className='w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4'>
+                <Search className='w-10 h-10 text-gray-400' />
+              </div>
+              <h3 className='text-xl font-medium text-gray-900 mb-2'>
+                Tidak ada produk ditemukan
+              </h3>
+              <p className='text-gray-600 mb-6'>
+                Coba ubah kata kunci pencarian atau filter kategori
+              </p>
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setSelectedCategory(null);
+                  refetchProducts();
+                }}
+                className='px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors'
+              >
+                Tampilkan Semua Produk
+              </button>
+            </div>
           )}
 
-          <button
-            className='w-12 h-12 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group'
-            title='AI Assistant'
-          >
-            <Brain className='w-5 h-5' />
-            <div className='absolute right-14 bg-gray-900 text-white px-3 py-1 rounded-lg text-sm whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none'>
-              AI Assistant
+          {/* ✅ Recommendations Section - Muncul di Homepage */}
+          {showRecommendations && recommendationProductId && (
+            <div className='mt-16 pt-8 border-t border-gray-200'>
+              <ProductRecommendations
+                productId={recommendationProductId}
+                title='Mungkin Anda Juga Suka'
+                maxItems={8}
+                onProductClick={(recommendedProduct) => {
+                  // Convert dan buka modal untuk produk yang direkomendasikan
+                  const product: Product = {
+                    id: recommendedProduct.id,
+                    name: recommendedProduct.name,
+                    currentPrice: recommendedProduct.currentPrice,
+                    originalPrice: recommendedProduct.originalPrice,
+                    imgUrl: recommendedProduct.imgUrl,
+                    stock: recommendedProduct.stock,
+                    categoryId: recommendedProduct.categoryId,
+                    discount: recommendedProduct.discount,
+                  };
+                  handleViewDetails(product);
+                  // Update rekomendasi untuk produk baru
+                  setRecommendationProductId(product.id);
+                }}
+                className='bg-gray-50 rounded-xl p-6'
+              />
             </div>
-          </button>
+          )}
         </div>
 
         {/* Product Modal */}
-        {selectedProduct && (
-          <Suspense
+        {isModalOpen && (
+          <React.Suspense
             fallback={
-              <div className='fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center'>
-                <div className='bg-white rounded-xl p-6 shadow-2xl flex items-center gap-3'>
-                  <Brain className='w-6 h-6 text-blue-600 animate-pulse' />
-                  <span className='text-gray-700 font-medium'>
-                    AI sedang memproses detail produk...
-                  </span>
-                </div>
+              <div className='fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50'>
+                <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-white'></div>
               </div>
             }
           >
@@ -672,28 +658,19 @@ export default function Home() {
               product={selectedProduct}
               isOpen={isModalOpen}
               onClose={handleCloseModal}
+              onProductSelect={handleModalProductSelect}
             />
-          </Suspense>
+          </React.Suspense>
         )}
 
-        {/* AI Status Indicator */}
-        <div className='fixed top-4 left-4 z-40'>
-          <div className='bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 shadow-lg border border-gray-200'>
-            <div className='flex items-center gap-2'>
-              <div className='w-2 h-2 bg-green-500 rounded-full animate-pulse'></div>
-              <span className='text-xs font-medium text-gray-700'>
-                AI Online
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Performance monitoring in development */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className='fixed bottom-4 left-4 bg-black/80 text-white text-xs p-2 rounded font-mono'>
-            Screen: {screenSize} | Products: {safeProducts.length} | Loading:{' '}
-            {loading ? 'Yes' : 'No'}
-          </div>
+        {/* Scroll to Top Button */}
+        {showScrollTop && (
+          <button
+            onClick={handleScrollToTop}
+            className='fixed bottom-6 right-6 z-40 p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all duration-200 transform hover:scale-110'
+          >
+            <ChevronDown className='w-5 h-5 rotate-180' />
+          </button>
         )}
       </div>
     </ErrorBoundary>

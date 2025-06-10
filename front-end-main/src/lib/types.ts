@@ -16,6 +16,17 @@ export interface Product {
   reviewCount?: number;
 }
 
+// ✅ Tambahan interface untuk rekomendasi produk
+export interface RecommendedProduct extends Product {
+  similarity_score: number; // Score kesamaan dari AI model
+}
+
+// ✅ Interface untuk rangkuman review
+export interface ReviewSummary {
+  productId: string;
+  summary: string;
+}
+
 export interface Category {
   id: number;
   name: string;
@@ -47,42 +58,40 @@ export interface ApiResponse<T> {
 // Extended interfaces untuk UI enhancement
 export interface ProductWithCategory extends Product {
   category?: Category;
-  averageRating?: number;
-  reviewCount?: number;
-  sentimentData?: SentimentData;
 }
 
 export interface ProductFilters {
-  search?: string;
   category?: number;
   minPrice?: number;
   maxPrice?: number;
-  minRating?: number;
-  sortBy?: 'name' | 'price' | 'rating' | 'discount';
-  sortOrder?: 'asc' | 'desc';
+  inStock?: boolean;
+  searchQuery?: string;
 }
 
 // Trend data interface
 export interface TrendData {
-  date: string;
-  searches: number;
-  productName: string;
-  categoryId: number;
+  productId: number;
+  views: number;
+  sales: number;
+  rating: number;
+  trending_score: number;
 }
 
 // Error handling interface
 export interface ApiError {
+  code: string;
   message: string;
-  status?: number;
-  code?: string;
+  details?: any;
 }
 
 // Search and pagination interfaces
 export interface SearchParams {
   query?: string;
+  category?: number;
   page?: number;
   limit?: number;
-  category?: number;
+  sortBy?: 'price' | 'rating' | 'name' | 'discount';
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface PaginationMeta {
@@ -90,21 +99,22 @@ export interface PaginationMeta {
   totalPages: number;
   totalItems: number;
   itemsPerPage: number;
-  hasNext: boolean;
-  hasPrevious: boolean;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
 }
 
 // Loading state interface
 export interface LoadingState {
   isLoading: boolean;
-  isError: boolean;
-  error?: string | null;
+  operation?: string;
+  progress?: number;
 }
 
 // Form interfaces
 export interface SearchFormData {
   query: string;
-  category: string;
+  category?: number;
+  filters?: ProductFilters;
 }
 
 // Component prop interfaces

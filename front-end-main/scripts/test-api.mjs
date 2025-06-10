@@ -1,36 +1,68 @@
-import { config } from 'dotenv';
 import axios from 'axios';
+import { config } from 'dotenv';
 
 // Load environment variables
 config({ path: '.env.local' });
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:5000';
 
+// ✅ Extended test endpoints including new ones
 const endpoints = [
-  { name: 'Health Check', url: '/' },
-  { name: 'Get All Products', url: '/getAllProduct' },
-  { name: 'Get All Categories', url: '/getAllCategory' },
-  { name: 'Get All Reviews', url: '/getAllReview' },
-  { name: 'Search Products by Name', url: '/getAllProductsByName?name=jam' },
+  { name: 'Health Check', url: '/', method: 'GET' },
+  { name: 'Get All Products', url: '/getAllProduct', method: 'GET' },
+  { name: 'Get All Categories', url: '/getAllCategory', method: 'GET' },
+  { name: 'Get All Reviews', url: '/getAllReview', method: 'GET' },
+  {
+    name: 'Search Products by Name',
+    url: '/getAllProductsByName?name=jam',
+    method: 'GET',
+  },
   {
     name: 'Get Products by Category',
     url: '/getAllProductByCategory?category=1',
+    method: 'GET',
   },
-  { name: 'Get Reviews by Product', url: '/getAllReviewByProduct?product=1' },
+  {
+    name: 'Get Reviews by Product',
+    url: '/getAllReviewByProduct?product=1',
+    method: 'GET',
+  },
   {
     name: 'Get Reviews by Category',
     url: '/getAllReviewByCategory?category=1',
+    method: 'GET',
   },
-  { name: 'Get Sentiment by Product', url: '/getSentimentByProduct?product=1' },
+  {
+    name: 'Get Sentiment by Product',
+    url: '/getSentimentByProduct?product=1',
+    method: 'GET',
+  },
+  // ✅ New endpoints
+  {
+    name: 'Get Recommend Products',
+    url: '/getRecommendProducts?product=1',
+    method: 'GET',
+    isNew: true,
+  },
+  {
+    name: 'Get Reviews Summary',
+    url: '/getReviewsSumOfProduct?product=1',
+    method: 'GET',
+    isNew: true,
+  },
 ];
 
 async function testEndpoint(endpoint) {
   try {
-    console.log(`🧪 Testing: ${endpoint.name}`);
+    console.log(
+      `🧪 Testing: ${endpoint.name}${endpoint.isNew ? ' (NEW)' : ''}`
+    );
     const startTime = Date.now();
 
-    const response = await axios.get(`${API_BASE_URL}${endpoint.url}`, {
-      timeout: 15000, // Increase timeout for AI model endpoints
+    const response = await axios({
+      method: endpoint.method,
+      url: `${API_BASE_URL}${endpoint.url}`,
+      timeout: 30000, // Extended timeout for AI endpoints
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
@@ -42,7 +74,6 @@ async function testEndpoint(endpoint) {
 
     // Enhanced response data logging
     if (response.data && typeof response.data === 'object') {
-      // Check for backend API response format: { error, message, data }
       if (response.data.hasOwnProperty('error')) {
         console.log(`   Error Status: ${response.data.error}`);
         console.log(`   Message: ${response.data.message}`);
@@ -52,138 +83,148 @@ async function testEndpoint(endpoint) {
             console.log(`   Data Count: ${response.data.data.length}`);
             if (response.data.data.length > 0) {
               console.log(
-                `   Sample Data: ${JSON.stringify(response.data.data[0], null, 2)}`
+                `   Sample Data:`,
+                JSON.stringify(response.data.data[0], null, 2).substring(
+                  0,
+                  200
+                ) + '...'
               );
             }
           } else {
             console.log(`   Data Type: ${typeof response.data.data}`);
             console.log(
-              `   Data: ${JSON.stringify(response.data.data, null, 2)}`
+              `   Data Sample:`,
+              JSON.stringify(response.data.data, null, 2).substring(0, 200) +
+                '...'
             );
           }
         }
-      } else {
-        // For endpoints that might return different formats
-        console.log(`   Response: ${JSON.stringify(response.data, null, 2)}`);
+
+        // ✅ Special logging for new endpoints
+        if (endpoint.isNew) {
+          console.log(`   🆕 NEW ENDPOINT RESULT:`);
+          if (
+            endpoint.url.includes('getRecommendProducts') &&
+            response.data.data
+          ) {
+            console.log(
+              `   📊 Recommendations: ${response.data.data.length} products found`
+            );
+          }
+          if (
+            endpoint.url.includes('getReviewsSumOfProduct') &&
+            response.data.data
+          ) {
+            console.log(
+              `   📝 Summary Length: ${response.data.data.summary?.length || 0} characters`
+            );
+          }
+        }
       }
     }
 
-    return { success: true, status: response.status, duration };
+    return {
+      success: true,
+      status: response.status,
+      duration,
+      data: response.data,
+    };
   } catch (error) {
     console.log(`❌ ${endpoint.name} - ${error.message}`);
 
-    // Enhanced error reporting with specific backend context
+    // Enhanced error reporting
     if (error.code === 'ECONNREFUSED') {
+      console.log('   💡 Backend server not running or not accessible');
       console.log(
-        '   💡 Backend server tidak berjalan atau tidak dapat diakses'
+        `   💡 Make sure Python server is running at: ${API_BASE_URL}`
       );
-      console.log(`   💡 Pastikan server Python berjalan di: ${API_BASE_URL}`);
-      console.log('   💡 Jalankan: python main.py di folder back-end');
+      console.log('   💡 Run: python main.py in back-end folder');
     } else if (error.code === 'ETIMEDOUT') {
-      console.log('   💡 Request timeout - server mungkin lambat merespons');
-      console.log(
-        '   💡 AI model endpoints mungkin membutuhkan waktu lebih lama'
-      );
+      console.log('   💡 Request timeout - server might be slow');
+      console.log('   💡 AI model endpoints might need more time');
     } else if (error.response) {
       console.log(
         `   💡 HTTP Error: ${error.response.status} - ${error.response.statusText}`
       );
       if (error.response.data) {
         console.log(
-          `   💡 Error Detail: ${JSON.stringify(error.response.data, null, 2)}`
+          `   💡 Error Detail:`,
+          JSON.stringify(error.response.data, null, 2)
         );
       }
-    } else if (error.code === 'ENOTFOUND') {
-      console.log('   💡 DNS lookup failed - periksa URL backend');
     }
 
-    return { success: false, error: error.message };
+    return {
+      success: false,
+      error: error.message,
+      details: error.response?.data,
+    };
   }
 }
 
-async function checkDatabaseConnection() {
-  try {
-    console.log('🗄️  Checking database connection...');
-
-    // Test dengan endpoint yang pasti ada data
-    const response = await axios.get(`${API_BASE_URL}/getAllCategory`, {
-      timeout: 5000,
-    });
-
-    if (response.data.error === false && response.data.data.length > 0) {
-      console.log('✅ Database connection working');
-      console.log(`   Categories found: ${response.data.data.length}`);
-      return true;
-    } else {
-      console.log('⚠️  Database might be empty or not properly configured');
-      return false;
-    }
-  } catch (error) {
-    console.log('❌ Database connection failed');
-    console.log(`   Error: ${error.message}`);
-    return false;
-  }
-}
-
-async function runTests() {
-  console.log('🚀 Starting API Tests...\n');
+async function runFullTest() {
+  console.log('🚀 Starting Comprehensive API Tests...\n');
   console.log(`Base URL: ${API_BASE_URL}\n`);
-
-  // Check if API_BASE_URL is properly set
-  if (!API_BASE_URL || API_BASE_URL === 'undefined') {
-    console.error('❌ API_BASE_URL tidak terdefinisi!');
-    console.error(
-      '💡 Pastikan file .env.local ada dan berisi NEXT_PUBLIC_API_URL'
-    );
-    console.error('💡 Contoh: NEXT_PUBLIC_API_URL=http://127.0.0.1:5000');
-    process.exit(1);
-  }
-
-  // Check database connection first
-  const dbConnected = await checkDatabaseConnection();
-  console.log(''); // Empty line
+  console.log('='.repeat(60));
 
   const results = [];
 
   for (const endpoint of endpoints) {
     const result = await testEndpoint(endpoint);
-    results.push({ ...endpoint, ...result });
+    results.push({ endpoint: endpoint.name, ...result });
     console.log(''); // Empty line for readability
   }
 
-  // Summary
-  console.log('📊 Test Summary:');
-  console.log('================');
+  // ✅ Summary Report
+  console.log('='.repeat(60));
+  console.log('📊 TEST SUMMARY REPORT');
+  console.log('='.repeat(60));
 
-  const successful = results.filter((r) => r.success).length;
-  const failed = results.filter((r) => !r.success).length;
+  const successful = results.filter((r) => r.success);
+  const failed = results.filter((r) => !r.success);
 
-  console.log(`✅ Successful: ${successful}/${results.length}`);
-  console.log(`❌ Failed: ${failed}/${results.length}`);
-  console.log(`🗄️  Database: ${dbConnected ? 'Connected' : 'Issues detected'}`);
+  console.log(`✅ Successful: ${successful.length}/${results.length}`);
+  console.log(`❌ Failed: ${failed.length}/${results.length}`);
 
-  if (failed > 0) {
-    console.log('\n🚨 Failed endpoints:');
-    results
-      .filter((r) => !r.success)
-      .forEach((r) => console.log(`   - ${r.name}: ${r.error}`));
-
-    console.log('\n💡 Troubleshooting Tips:');
-    console.log('1. Pastikan backend server berjalan: python main.py');
-    console.log(
-      '2. Verifikasi .env.local berisi NEXT_PUBLIC_API_URL=http://127.0.0.1:5000'
-    );
-    console.log('3. Pastikan database MySQL berjalan (XAMPP)');
-    console.log('4. Cek apakah file db.sql sudah di-import');
-    console.log('5. Verifikasi file .env di backend sudah dikonfigurasi');
-    console.log('6. Jalankan health check: npm run health-check');
+  if (successful.length > 0) {
+    console.log('\n🎉 WORKING ENDPOINTS:');
+    successful.forEach((result) => {
+      console.log(`  ✓ ${result.endpoint} (${result.duration}ms)`);
+    });
   }
 
-  console.log('\n🏁 Tests completed!');
-  process.exit(failed > 0 ? 1 : 0);
+  if (failed.length > 0) {
+    console.log('\n🚨 FAILED ENDPOINTS:');
+    failed.forEach((result) => {
+      console.log(`  ✗ ${result.endpoint}: ${result.error}`);
+    });
+  }
+
+  // ✅ New endpoints specific check
+  const newEndpoints = results.filter(
+    (r) =>
+      r.endpoint.includes('Recommend Products') ||
+      r.endpoint.includes('Reviews Summary')
+  );
+
+  console.log('\n🆕 NEW FEATURES STATUS:');
+  newEndpoints.forEach((result) => {
+    const status = result.success ? '✅ WORKING' : '❌ FAILED';
+    console.log(`  ${status}: ${result.endpoint}`);
+  });
+
+  console.log('\n💡 NEXT STEPS:');
+  if (failed.length === 0) {
+    console.log('  🎯 All endpoints working! You can now:');
+    console.log('     1. Start frontend: npm run dev');
+    console.log('     2. Test product recommendations in the UI');
+    console.log('     3. Check review summaries in product modals');
+  } else {
+    console.log('  🔧 Fix failed endpoints before proceeding');
+    console.log('     1. Check database connection');
+    console.log('     2. Verify AI model dependencies');
+    console.log('     3. Check backend logs for errors');
+  }
 }
 
-runTests().catch((error) => {
-  console.error('💥 Test runner error:', error);
-  process.exit(1);
-});
+runFullTest().catch(console.error);

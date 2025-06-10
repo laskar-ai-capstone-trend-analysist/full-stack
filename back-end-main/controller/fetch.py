@@ -40,14 +40,14 @@ def getAllCategories():
     result = getAllCategory()
     return jsonify({
         'error': False,
-        'message': 'Data fetched successfully',
+        'message': 'Categories fetched successfully',
         'data': result
     }), 200
   except Exception as e:
     print('Error fetching the data', e)
     return jsonify({
       'error': True,
-      'message': 'Error fetching data',
+      'message': 'Error fetching categories',
       'data': None
     }), 500
   
@@ -56,30 +56,30 @@ def getAllReviews():
     result = getAllReview()
     return jsonify({
         'error': False,
-        'message': 'Data fetched successfully',
-        'data': result
-    }), 200
-  except Exception as e:
-    print('Error fetching the data', e)
-    return jsonify({
-        'error': True,
-        'message': 'Error fetching data',
-        'data': None
-      }), 500
-
-def getAllProductsByCategory(categoryId):
-  try:
-    result = getProductsByCategory(categoryId)
-    return jsonify({
-        'error': False,
-        'message': 'Data fetched successfully',
+        'message': 'Reviews fetched successfully',
         'data': result
     }), 200
   except Exception as e:
     print('Error fetching the data', e)
     return jsonify({
       'error': True,
-      'message': 'Error fetching data',
+      'message': 'Error fetching reviews',
+      'data': None
+    }), 500
+
+def getAllProductsByCategory(categoryId):
+  try:
+    result = getProductsByCategory(categoryId)
+    return jsonify({
+        'error': False,
+        'message': 'Products by category fetched successfully',
+        'data': result
+    }), 200
+  except Exception as e:
+    print('Error fetching the data', e)
+    return jsonify({
+      'error': True,
+      'message': 'Error fetching products by category',
       'data': None
     }), 500
 
@@ -88,14 +88,14 @@ def getAllReviewsByProduct(productId):
     result = getReviewsByProduct(productId)
     return jsonify({
         'error': False,
-        'message': 'Data fetched successfully',
+        'message': 'Reviews by product fetched successfully',
         'data': result
     }), 200
   except Exception as e:
     print('Error fetching the data', e)
     return jsonify({
       'error': True,
-      'message': 'Error fetching data',
+      'message': 'Error fetching reviews by product',
       'data': None
     }), 500
   
@@ -104,14 +104,14 @@ def getAllReviewsByCategory(categoryId):
     result = getReviewsByCategory(categoryId)
     return jsonify({
         'error': False,
-        'message': 'Data fetched successfully',
+        'message': 'Reviews by category fetched successfully',
         'data': result
     }), 200
   except Exception as e:
     print('Error fetching the data', e)
     return jsonify({
       'error': True,
-      'message': 'Error fetching data',
+      'message': 'Error fetching reviews by category',
       'data': None
     }), 500
   
@@ -120,14 +120,14 @@ def getSentimentPrediction(productId):
     result = getSentimentByProduct(productId)
     return jsonify({
         'error': False,
-        'message': 'Prediction succeeded',
+        'message': 'Sentiment analysis fetched successfully',
         'data': result
     }), 200
   except Exception as e:
     print('Error fetching the data', e)
     return jsonify({
       'error': True,
-      'message': 'Prediction failed',
+      'message': 'Error fetching sentiment analysis',
       'data': None
     }), 500
 
@@ -136,50 +136,94 @@ def getProductsByName(name):
     result = getAllProductsByName(name.lower())
     return jsonify({
         'error': False,
-        'message': 'Data fetched successfully',
+        'message': 'Products by name fetched successfully',
         'data': result
     }), 200
   except Exception as e:
     print('Error fetching the data', e)
     return jsonify({
       'error': True,
-      'message': 'Error fetching data',
+      'message': 'Error fetching products by name',
       'data': None
     }), 500
 
+# ✅ Updated recommendation function
 def recomend_products(productId):
   try:
+    print(f"Getting recommendations for product ID: {productId}")
     result = recomend(productId)
+    
+    # Pastikan result dalam format yang benar
+    if not result or len(result) == 0:
+      return jsonify({
+          'error': False,
+          'message': 'No recommendations found for this product',
+          'data': []
+      }), 200
+    
     return jsonify({
         'error': False,
-        'message': 'Data fetched successfully',
+        'message': 'Product recommendations fetched successfully',
         'data': result
     }), 200
   except Exception as e:
-    print('Error fetching the data', e)
+    print(f'Error fetching recommendations for product {productId}:', e)
     return jsonify({
       'error': True,
-      'message': 'Error fetching data',
-      'data': None
+      'message': f'Error fetching product recommendations: {str(e)}',
+      'data': []
     }), 500
 
+# ✅ Updated review summary function
 def getReviewsSumByProduct(productId):
   try:
-    result = getReviewsByProduct(productId)
-    reviews = [item['review'] for item in result]
-    summary = lexrank_summarizer(reviews)
+    print(f"Getting review summary for product ID: {productId}")
+    
+    # Get reviews for the product
+    reviews_result = getReviewsByProduct(productId)
+    
+    if not reviews_result or len(reviews_result) == 0:
+      return jsonify({
+          'error': False,
+          'message': 'No reviews found for this product',
+          'data': {
+              'productId': str(productId),
+              'summary': 'Belum ada review tersedia untuk produk ini.'
+          }
+      }), 200
+    
+    # Extract review content
+    reviews = [item['review'] for item in reviews_result if 'review' in item]
+    
+    if not reviews:
+      return jsonify({
+          'error': False,
+          'message': 'No review content found',
+          'data': {
+              'productId': str(productId),
+              'summary': 'Konten review tidak tersedia.'
+          }
+      }), 200
+    
+    # Generate summary
+    summary = lexrank_summarizer(reviews, num_sentences=3, threshold=0.1)
+    
     return jsonify({
         'error': False,
-        'message': 'Summarization succeed',
+        'message': 'Review summary generated successfully',
         'data': {
-          'productId': productId,
-          'summary': summary
+            'productId': str(productId),
+            'summary': summary
         }
     }), 200
+    
   except Exception as e:
-    print('Error fetching the data', e)
+    print(f'Error generating review summary for product {productId}:', e)
     return jsonify({
       'error': True,
-      'message': 'Summarization failed',
-      'data': None
+      'message': f'Error generating review summary: {str(e)}',
+      'data': {
+          'productId': str(productId),
+          'summary': 'Gagal membuat rangkuman review.'
+      }
     }), 500

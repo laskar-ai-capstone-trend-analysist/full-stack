@@ -1,16 +1,25 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-import { Product } from '@/types';
+import { useState, useCallback, useEffect, useMemo } from 'react';
+import { Product, RecommendedProduct } from '@/lib/types';
 import { productsApi } from '@/lib/api';
 import { debug } from '@/lib/debug';
-import { performanceMonitor } from '@/lib/performance';
 import { errorLogger } from '@/lib/errorLogger';
+import { performanceMonitor } from '@/lib/performance';
 
 export function useProducts() {
-  const [products, setProducts] = useState<Product[]>([]); // ✅ Initialize as empty array
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // ✅ Tambahan state untuk rekomendasi
+  const [recommendations, setRecommendations] = useState<RecommendedProduct[]>(
+    []
+  );
+  const [recommendationsLoading, setRecommendationsLoading] = useState(false);
+  const [recommendationsError, setRecommendationsError] = useState<
+    string | null
+  >(null);
 
   const fetchProducts = useCallback(async () => {
     const operationName = 'fetchProducts';
@@ -171,18 +180,81 @@ export function useProducts() {
     [products]
   );
 
+  // ✅ Tambahan fungsi untuk mendapatkan rekomendasi produk
+  const getRecommendations = useCallback(async (productId: number) => {
+    const operationName = 'getRecommendations';
+    try {
+      performanceMonitor.start(operationName, { productId });
+      setRecommendationsLoading(true);
+      setRecommendationsError(null);
+
+      const data = await productsApi.getRecommendations(productId);
+
+      // ✅ Safe data handling
+      const safeData = Array.isArray(data) ? data : [];
+      setRecommendations(safeData);
+
+      const duration = performanceMonitor.end(operationName);
+      debug.info(`${operationName} completed in ${duration?.toFixed(2)}ms`, {
+        productId,
+        recommendationsCount: safeData.length,
+      });
+
+      return safeData;
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : 'Terjadi kesalahan saat mengambil rekomendasi produk';
+      errorLogger.logComponentError(
+        'useProducts',
+        `${operationName} failed`,
+        err instanceof Error ? err : new Error(String(err))
+      );
+      setRecommendationsError(errorMessage);
+      setRecommendations([]); // ✅ Set to empty array on error
+      debug.error(`Error in ${operationName}:`, err);
+      return [];
+    } finally {
+      setRecommendationsLoading(false);
+    }
+  }, []);
+
+  // ✅ Clear recommendations function
+  const clearRecommendations = useCallback(() => {
+    setRecommendations([]);
+    setRecommendationsError(null);
+  }, []);
+
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
 
+  // Memastikan produk selalu dalam format yang aman
+  const safeProducts = useMemo(() => {
+    return products.map((product) => ({
+      ...product,
+      currentPrice: product.currentPrice ? Number(product.currentPrice) : 0,
+      discount: product.discount ? Number(product.discount) : 0,
+      stock: product.stock ? Number(product.stock) : 0,
+    }));
+  }, [products]);
+
   return {
-    products,
+    products: safeProducts,
     loading,
     error,
     refetch: fetchProducts,
     searchProducts,
     filterByCategory,
+    getTrendingProducts,
     getProductById,
-    getTrendingProducts, // ✅ Export fungsi baru
+
+    // ✅ Tambahan returns untuk rekomendasi
+    recommendations,
+    recommendationsLoading,
+    recommendationsError,
+    getRecommendations,
+    clearRecommendations,
   };
 }

@@ -1,21 +1,13 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { Product, RecommendedProduct } from '@/lib/types';
-import {
-  X,
-  Star,
-  Heart,
-  ShoppingCart,
-  Share2,
-  Tag,
-  Package,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+import React, { useState, useEffect, useCallback } from 'react';
+import { X, Star, ShoppingCart, Heart, Package, Truck } from 'lucide-react';
+import { Product, RecommendedProduct, Review } from '@/lib/types';
 import { useReviews } from '@/hooks/useReviews';
 import { useSentiment } from '@/hooks/useSentiment';
-import ProductRecommendations from './ProductRecommendations';
-import ReviewSummary from '../review/ReviewSummary';
+import { cn } from '@/lib/utils';
+import ProductRecommendations from '@/components/product/ProductRecommendations';
+import ReviewSummary from '@/components/review/ReviewSummary';
 
 interface ProductModalProps {
   product: Product | null;
@@ -35,11 +27,12 @@ const ProductModal: React.FC<ProductModalProps> = ({
   >('overview');
   const [isWishlisted, setIsWishlisted] = useState(false);
 
+  // ✅ Use hooks dengan proper destructuring
   const {
     reviews,
-    fetchReviewsByProduct,
     loading: reviewsLoading,
-    getAverageRating,
+    error: reviewsError,
+    fetchReviewsByProduct,
   } = useReviews();
 
   const {
@@ -48,12 +41,29 @@ const ProductModal: React.FC<ProductModalProps> = ({
     loading: sentimentLoading,
   } = useSentiment();
 
+  // ✅ Function untuk calculate average rating
+  const getAverageRating = useCallback((): number => {
+    if (!reviews || reviews.length === 0) {
+      return 0;
+    }
+
+    const totalRating = reviews.reduce((sum, review) => {
+      const rating = typeof review.rating === 'number' ? review.rating : 0;
+      return sum + rating;
+    }, 0);
+
+    return totalRating / reviews.length;
+  }, [reviews]);
+
   // Reset state when modal opens/closes
   useEffect(() => {
     if (isOpen && product) {
       setActiveTab('overview');
-      fetchReviewsByProduct(product.id);
-      getSentimentByProduct(product.id);
+      console.log('Modal opened for product:', product.id);
+
+      // Fetch reviews and sentiment
+      fetchReviewsByProduct(product.id).catch(console.error);
+      getSentimentByProduct(product.id).catch(console.error);
     }
   }, [isOpen, product, fetchReviewsByProduct, getSentimentByProduct]);
 
@@ -77,32 +87,36 @@ const ProductModal: React.FC<ProductModalProps> = ({
   }, [isOpen, onClose]);
 
   // Handle recommendation product click
-  const handleRecommendationClick = (
-    recommendedProduct: RecommendedProduct
-  ) => {
-    if (onProductSelect) {
-      onProductSelect(recommendedProduct);
-    }
-    // Modal akan tetap terbuka dan menampilkan produk baru
-  };
+  const handleRecommendationClick = useCallback(
+    (recommendedProduct: RecommendedProduct) => {
+      if (onProductSelect) {
+        onProductSelect(recommendedProduct);
+      }
+      // Modal akan tetap terbuka dan menampilkan produk baru
+    },
+    [onProductSelect]
+  );
 
   // Calculate discount percentage
-  const calculateDiscount = (original: number, current: number): number => {
-    if (original <= current) return 0;
-    return Math.round(((original - current) / original) * 100);
-  };
+  const calculateDiscount = useCallback(
+    (original: number, current: number): number => {
+      if (original <= current) return 0;
+      return Math.round(((original - current) / original) * 100);
+    },
+    []
+  );
 
   // Format price to Indonesian Rupiah
-  const formatPrice = (price: number): string => {
+  const formatPrice = useCallback((price: number): string => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
       minimumFractionDigits: 0,
     }).format(price);
-  };
+  }, []);
 
   // Get sentiment summary
-  const getSentimentSummary = () => {
+  const getSentimentSummary = useCallback(() => {
     if (!sentimentData || sentimentData.length === 0) return null;
 
     const positive = sentimentData.filter(
@@ -122,7 +136,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
       neutral: Math.round((neutral / total) * 100),
       total,
     };
-  };
+  }, [sentimentData]);
 
   if (!isOpen || !product) return null;
 
@@ -209,21 +223,12 @@ const ProductModal: React.FC<ProductModalProps> = ({
                     <div className='flex items-center gap-1'>
                       <Star className='w-5 h-5 fill-yellow-400 text-yellow-400' />
                       <span className='font-medium'>
-                        {averageRating.toFixed(1)}
-                      </span>
-                      <span className='text-gray-500'>
-                        ({reviews.length} review)
+                        {averageRating > 0 ? averageRating.toFixed(1) : '0.0'}
                       </span>
                     </div>
-
-                    {sentimentSummary && (
-                      <div className='flex items-center gap-2 text-sm'>
-                        <div className='flex items-center gap-1'>
-                          <div className='w-2 h-2 bg-green-500 rounded-full'></div>
-                          <span>{sentimentSummary.positive}% positif</span>
-                        </div>
-                      </div>
-                    )}
+                    <span className='text-gray-600'>
+                      ({reviews.length} review)
+                    </span>
                   </div>
 
                   {/* Stock */}
@@ -262,7 +267,7 @@ const ProductModal: React.FC<ProductModalProps> = ({
                           'p-3 rounded-lg border transition-colors',
                           isWishlisted
                             ? 'bg-red-50 border-red-200 text-red-600'
-                            : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50'
+                            : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
                         )}
                       >
                         <Heart
@@ -272,9 +277,6 @@ const ProductModal: React.FC<ProductModalProps> = ({
                           )}
                         />
                       </button>
-                      <button className='p-3 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors'>
-                        <Share2 className='w-5 h-5' />
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -283,38 +285,31 @@ const ProductModal: React.FC<ProductModalProps> = ({
 
             {/* Tabs */}
             <div className='border-b border-gray-200'>
-              <nav className='flex space-x-8 px-6'>
-                {[
-                  { key: 'overview', label: 'Ringkasan', count: null },
-                  { key: 'reviews', label: 'Review', count: reviews.length },
-                  { key: 'recommendations', label: 'Rekomendasi', count: null },
-                ].map((tab) => (
+              <div className='flex space-x-8 px-6'>
+                {['overview', 'reviews', 'recommendations'].map((tab) => (
                   <button
-                    key={tab.key}
-                    onClick={() => setActiveTab(tab.key as any)}
+                    key={tab}
+                    onClick={() => setActiveTab(tab as any)}
                     className={cn(
-                      'py-4 px-1 border-b-2 font-medium text-sm transition-colors',
-                      activeTab === tab.key
+                      'py-4 px-2 border-b-2 font-medium text-sm transition-colors',
+                      activeTab === tab
                         ? 'border-blue-500 text-blue-600'
                         : 'border-transparent text-gray-500 hover:text-gray-700'
                     )}
                   >
-                    {tab.label}
-                    {tab.count !== null && (
-                      <span className='ml-2 bg-gray-100 text-gray-600 py-0.5 px-2 rounded-full text-xs'>
-                        {tab.count}
-                      </span>
-                    )}
+                    {tab === 'overview' && 'Deskripsi'}
+                    {tab === 'reviews' && `Review (${reviews.length})`}
+                    {tab === 'recommendations' && 'Rekomendasi'}
                   </button>
                 ))}
-              </nav>
+              </div>
             </div>
 
             {/* Tab Content */}
             <div className='p-6'>
               {activeTab === 'overview' && (
-                <div className='space-y-8'>
-                  {/* ✅ Review Summary Component */}
+                <div className='space-y-6'>
+                  {/* Review Summary */}
                   <ReviewSummary
                     productId={product.id}
                     title='Rangkuman Review Pelanggan'
@@ -324,10 +319,10 @@ const ProductModal: React.FC<ProductModalProps> = ({
 
                   {/* Sentiment Analysis */}
                   {sentimentSummary && (
-                    <div className='bg-white border border-gray-200 rounded-lg p-6'>
-                      <h4 className='text-lg font-semibold mb-4'>
-                        Analisis Sentiment
-                      </h4>
+                    <div className='bg-gray-50 rounded-lg p-6'>
+                      <h3 className='text-lg font-semibold mb-4'>
+                        Analisis Sentiment Review
+                      </h3>
                       <div className='grid grid-cols-3 gap-4'>
                         <div className='text-center'>
                           <div className='text-2xl font-bold text-green-600'>
@@ -360,6 +355,18 @@ const ProductModal: React.FC<ProductModalProps> = ({
                       <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto'></div>
                       <p className='text-gray-600 mt-2'>Memuat review...</p>
                     </div>
+                  ) : reviewsError ? (
+                    <div className='text-center py-8'>
+                      <p className='text-red-600 mb-4'>Error: {reviewsError}</p>
+                      <button
+                        onClick={() =>
+                          product && fetchReviewsByProduct(product.id)
+                        }
+                        className='px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700'
+                      >
+                        Coba Lagi
+                      </button>
+                    </div>
                   ) : reviews.length > 0 ? (
                     reviews.slice(0, 10).map((review) => (
                       <div
@@ -381,12 +388,12 @@ const ProductModal: React.FC<ProductModalProps> = ({
                             ))}
                           </div>
                           <span className='text-sm text-gray-600'>
-                            {new Date(review.createdAt).toLocaleDateString(
+                            {new Date(review.tanggal).toLocaleDateString(
                               'id-ID'
                             )}
                           </span>
                         </div>
-                        <p className='text-gray-700'>{review.content}</p>
+                        <p className='text-gray-700'>{review.review}</p>
                       </div>
                     ))
                   ) : (

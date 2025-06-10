@@ -301,14 +301,12 @@ export const reviewsApi = {
   getSummary: async (productId: number): Promise<ReviewSummary> => {
     try {
       console.log(`🔍 Fetching review summary for product ${productId}`);
-
-      const response = await api.get<ApiResponse<ReviewSummary>>(
-        `/getReviewsSumOfProduct`,
-        {
-          params: { product: productId.toString() },
-          timeout: 30000, // Extended timeout for AI processing
-        }
-      );
+      const response = await api.get(`/getReviewsSumOfProduct`, {
+        params: {
+          product: productId.toString(),
+        },
+        timeout: 30000, // 30 seconds timeout
+      });
 
       console.log('🔍 Review summary API response:', response.data);
 

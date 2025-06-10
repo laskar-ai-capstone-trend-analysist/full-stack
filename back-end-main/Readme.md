@@ -381,3 +381,74 @@ Mengambil semua product yang memiliki kempiripan nama dengan keyword
     "data": null
   }
   ```
+
+### GET /getRecommendProducts
+
+Mengambil semua product yang memiliki kempiripan dengan product yang dipilih berdasarkan skor kempiripan dari model rekomendasi
+
+#### Query Parameters
+
+- `product` (string, required): product id untuk mencari rekomendasi.
+
+#### Responses
+
+- **200 OK**:
+  ```json
+  {
+    "error": false
+    "message": "Data fetched successfully",
+    "data": [
+      {
+        "categoryId": 3,
+        "currentPrice": 11229000,
+        "discount": 37.61,
+        "id": 24,
+        "imgUrl": "https://images.tokopedia.net/img/cache/500-square/aphluv/1997/1/1/ad7c63d21083407d8a6909e471e95eb8~.jpeg.webp?ect=4g",
+        "name": "apple iphone gb gb gb garansi resmi ibox gb promo black",
+        "originalPrice": 17999000,
+        "similarity_score": 0.7697804441024128,
+        "stock": 13
+      },
+      ..,
+      ..
+    ]
+  }
+  ```
+- **500**:
+  ```json
+  {
+    "error": true,
+    "message": "Error fetching data",
+    "data": null
+  }
+  ```
+
+### GET /getReviewsSumOfProduct
+
+Mengambil rangkuman review dari suatu product
+
+#### Query Parameters
+
+- `product` (string, required): product id untuk mencari review berdasarkan product.
+
+#### Responses
+
+- **200 OK**:
+  ```json
+  {
+    "error": false,
+    "message": "Summarization succeed",
+    "data": {
+      "productId": "1",
+      "summary": "barang bagus,bagus bahan bagus,sesuai bagus"
+    }
+  }
+  ```
+- **500**:
+  ```json
+  {
+    "error": true,
+    "message": "Error fetching data",
+    "data": null
+  }
+  ```

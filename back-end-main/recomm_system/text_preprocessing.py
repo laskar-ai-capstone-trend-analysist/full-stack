@@ -14,8 +14,8 @@ def preprocess_text(text):
 
     text_clean = cleaningText(text)
     text_casefolded = casefoldingText(text_clean)
-    text_stemmed = stemmingText(text_casefolded)
-    text_slang_fixed = fix_slangwords(text_stemmed)
+    # text_stemmed = stemmingText(text_casefolded)
+    text_slang_fixed = fix_slangwords(text_casefolded)
     text_tokenized = tokenizingText(text_slang_fixed)
     text_filtered = filteringText(text_tokenized)
     text_final = toSentence(text_filtered)
@@ -79,14 +79,14 @@ def filteringText(text): # Menghapus stopwords dalam teks
     text = filtered
     return text
  
-factory = StemmerFactory()
-stemmer = factory.create_stemmer()
+# factory = StemmerFactory()
+# stemmer = factory.create_stemmer()
 
-def stemmingText(text):
-    words = text.split()
-    stemmed_words = [stemmer.stem(word) for word in words]
-    stemmed_text = ' '.join(stemmed_words)
-    return stemmed_text
+# def stemmingText(text):
+#     words = text.split()
+#     stemmed_words = [stemmer.stem(word) for word in words]
+#     stemmed_text = ' '.join(stemmed_words)
+#     return stemmed_text
  
 def toSentence(list_words): # Mengubah daftar kata menjadi kalimat
     sentence = ' '.join(word for word in list_words)

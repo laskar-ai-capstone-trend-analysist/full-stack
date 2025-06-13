@@ -275,18 +275,27 @@ def getSentimentByProduct(productId):
         connection = get_db_connection()
         cursor = connection.cursor(dictionary=True)
         
+        # Query data sentiment dari tabel prediction
         query = "SELECT productId, sentiment_positive, sentiment_negative, sentiment_neutral FROM prediction WHERE productId = %s"
         cursor.execute(query, (productId,))
         
         results = cursor.fetchall()
+        print(f"🔍 DEBUG: Found {len(results)} sentiment records for product {productId}")
+        
+        if not results:
+            print(f"⚠️ No sentiment data found for product {productId}")
+            return []
+        
         sentiments = []
         for row in results:
-            sentiments.append({
-                'productId': int(row['productId']) if row['productId'] else 0,
-                'sentiment_positive': float(row['sentiment_positive']) if row['sentiment_positive'] else 0,
-                'sentiment_negative': float(row['sentiment_negative']) if row['sentiment_negative'] else 0,
-                'sentiment_neutral': float(row['sentiment_neutral']) if row['sentiment_neutral'] else 0
-            })
+            sentiment_data = {
+                'productId': int(row['productId']),
+                'sentiment_positive': float(row['sentiment_positive']),
+                'sentiment_negative': float(row['sentiment_negative']),
+                'sentiment_neutral': float(row['sentiment_neutral'])
+            }
+            sentiments.append(sentiment_data)
+            print(f"✅ Retrieved sentiment: {sentiment_data}")
         
         print(f"✅ DB: Retrieved {len(sentiments)} sentiment records for product {productId}")
         return sentiments

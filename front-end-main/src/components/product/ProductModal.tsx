@@ -315,36 +315,46 @@ const ProductModal: React.FC<ProductModalProps> = ({
                     title='Rangkuman Review Pelanggan'
                     maxLength={300}
                     showMetadata={true}
+                    showSentiment={true} // ✅ Enable sentiment analysis
+                    className='mb-6'
                   />
 
-                  {/* Sentiment Analysis */}
-                  {sentimentSummary && (
-                    <div className='bg-gray-50 rounded-lg p-6'>
-                      <h3 className='text-lg font-semibold mb-4'>
-                        Analisis Sentiment Review
-                      </h3>
-                      <div className='grid grid-cols-3 gap-4'>
-                        <div className='text-center'>
-                          <div className='text-2xl font-bold text-green-600'>
-                            {sentimentSummary.positive}%
-                          </div>
-                          <div className='text-sm text-gray-600'>Positif</div>
-                        </div>
-                        <div className='text-center'>
-                          <div className='text-2xl font-bold text-gray-600'>
-                            {sentimentSummary.neutral}%
-                          </div>
-                          <div className='text-sm text-gray-600'>Netral</div>
-                        </div>
-                        <div className='text-center'>
-                          <div className='text-2xl font-bold text-red-600'>
-                            {sentimentSummary.negative}%
-                          </div>
-                          <div className='text-sm text-gray-600'>Negatif</div>
-                        </div>
+                  {/* ✅ Tambahkan informasi produk lainnya jika diperlukan */}
+                  <div className='bg-gray-50 rounded-lg p-6'>
+                    <h3 className='text-lg font-semibold mb-4'>
+                      Detail Produk
+                    </h3>
+                    <div className='grid grid-cols-2 gap-4 text-sm'>
+                      <div>
+                        <span className='text-gray-600'>Kategori:</span>
+                        <span className='ml-2 font-medium'>
+                          {product.categoryId
+                            ? `Kategori ${product.categoryId}`
+                            : 'Tidak tersedia'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className='text-gray-600'>Stok:</span>
+                        <span className='ml-2 font-medium'>
+                          {product.stock} unit
+                        </span>
+                      </div>
+                      <div>
+                        <span className='text-gray-600'>Diskon:</span>
+                        <span className='ml-2 font-medium'>
+                          {discount > 0 ? `${discount}%` : 'Tidak ada diskon'}
+                        </span>
+                      </div>
+                      <div>
+                        <span className='text-gray-600'>Rating:</span>
+                        <span className='ml-2 font-medium'>
+                          {averageRating > 0
+                            ? `${averageRating.toFixed(1)}/5`
+                            : 'Belum ada rating'}
+                        </span>
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
               )}
 

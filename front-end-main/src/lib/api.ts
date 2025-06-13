@@ -410,28 +410,45 @@ export const reviewsApi = {
 // Sentiment API
 export const sentimentApi = {
   getByProduct: async (productId: number): Promise<SentimentData[]> => {
-    try {
-      const response = await api.get<ApiResponse<SentimentData[]>>(
-        `/getSentimentByProduct`,
-        {
-          params: { product: productId.toString() },
+    return retryRequest(async () => {
+      try {
+        console.log(`🔍 Fetching sentiment data for product ${productId}`);
+
+        const response = await api.get<ApiResponse<SentimentData[]>>(
+          `/getSentimentByProduct`,
+          {
+            params: { product: productId.toString() },
+            timeout: 30000, // Extended timeout for AI processing
+          }
+        );
+
+        console.log('🔍 Sentiment API response:', response.data);
+
+        if (response.data.error) {
+          throw new Error(response.data.message);
         }
-      );
-      if (response.data.error) {
-        throw new Error(response.data.message);
-      }
 
-      // ✅ Safe array handling
-      let sentiments = response.data.data;
-      if (!sentiments || !Array.isArray(sentiments)) {
-        return [];
-      }
+        // ✅ Safe array handling dengan logging
+        let sentimentData = response.data.data;
+        if (!sentimentData) {
+          console.warn('No sentiment data received');
+          return [];
+        }
 
-      return sentiments;
-    } catch (error) {
-      console.error('Error fetching sentiment data:', error);
-      throw error;
-    }
+        if (!Array.isArray(sentimentData)) {
+          console.warn('Sentiment data is not an array:', sentimentData);
+          return [];
+        }
+
+        console.log(
+          `✅ Successfully fetched ${sentimentData.length} sentiment records`
+        );
+        return sentimentData;
+      } catch (error) {
+        console.error('❌ Error fetching sentiment data:', error);
+        throw error;
+      }
+    });
   },
 };
 
@@ -453,7 +470,7 @@ export const apiClient = {
   products: productsApi,
   categories: categoriesApi,
   reviews: reviewsApi,
-  sentiment: sentimentApi,
+  sentiment: sentimentApi, // ✅ Add sentiment API
   health: healthApi,
 };
 
